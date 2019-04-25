@@ -1,0 +1,102 @@
+{
+    "users": [
+        {
+            "id": "firiusbob",
+            "refresh_token": "AQCZ17XmgcAjHgI3rgwDKVZa8jpLJ3AQNPofjFdmXTJBzXqBph2uXOVVeC9xKIZPvYkX9l5S0k-wYP7sbpky2TOe2FL3CvP1IhWXsxEvXNCV1X_RFlT93J085iEs32LFnHQ",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/3DSQOPzeTR6vLlxHMkvKm1",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/0OVVjGoCH87pHS7ZQ1QSxE",
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/7KjK81hwQYc64Cy8dWhAvg"
+        },
+        {
+            "id": "_ashleyjoe_",
+            "refresh_token": "AQBDLX44PaB0lyL77RB-GbnL2zeCg9jigyE7JKQNTX4Zyd9UdE-aMkNAs7c-pGOskiQRen3wIYtxxcCdirDPKrZTbf7FR4DwRbLfc7Cd5RXx1sJxhXyxI3btmMiqHa6NPRI",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/4wI0rl8z6qNEgiOjgAYtdB",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/0SG9h3PQGoAG3IXYGbX9JJ",
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/34FFvXou2VstDo3Ri6VwDw"
+        },
+        {
+            "id": "ddotesting77",
+            "refresh_token": "AQA5bdqp0W8fNDO0IZ4kB8DZ510ODgueVKWchhxKVZoAfyalJ1hWOKcUrasJML2dCAt_U6nbj0VDHWyz8cekn0rFjaWxHtTYn7OZmxje0HYAgHlN3O6CqeT4dJOWYKtY0dQ",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/7FrL8eetpUzOMvngmQJ8Ml",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/3FTVBlJMQhSFFROH3bdAEt",
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/65bduZrs3E8nKndGtiFRIY"
+        },
+        {
+            "id": "aquatrident",
+            "refresh_token": "AQDqhBTjvV5L5vFoFpxog_gIEo5spvz7Tid3ArQNbMaQmIBQzunRH94tXDcJIAYdzD9I6FVV4Aihvn7Uqvc9jhgwea5oTB24RA73CGaVpyjScRc89IxmHetKKYfwzkgyXmc",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/6uCLRxfCvhdLsH9rx6rIyh",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/7JCP9o6f81WaYSJdAg1z39",
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/5Q6jjcDyZV0L3U8YTzW0hU"
+        },
+        {
+            "id": "plwang",
+            "refresh_token": "AQC4hYe_4gOfmhF-o-8mn0IJYS1CnvdpEn9d_E76g2lCQIHV7GCNkdX728gQsGBvh4pqKU88GhNT0Gtu_ZWTVmo7YKE4AkN2R9zYwcmKkIaCrGEGmn7V2RyxrYheh27Y2Ck",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/68U1ClYHYYVuJzo1D2JiTB",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/3kbNldzrl9kjuxexCWAvOW",
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/2rRzsz8laWQRnrq2jYgPdh"
+        },
+        {
+            "id": "margaretbk-us",
+            "refresh_token": "AQAd1NVqfOTvlKbXtqfVmDVoHxbvh2bbJWMr_QJkDJiXVM8K1g577pvlM_fkZCoOwyz4HI_qjigulRj18-NEB-FIswt7q48lwlTQQDbTJWlaqvzF6lLAmh-0zgQkNsC8Q4w",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/2zjLJRbGhWQHexJUYYUWLH",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/6Ae78ottK9Q4qkouooO1da",
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/7zvvWZVklzXWHA5RdXEvex"
+        },
+        {
+            "id": "jcheng54",
+            "refresh_token": "AQAEkdo6JCU5ZH1_t4xj1m0b6WWsuxSLhpG9nBtDCLkCFavmysL_BSRIXXaV_N1wChKBIwaybK-DfAuZyLGDT2MUkogU7zfSF4Kxu2KxhHbPf4LS28e5k6N-UkZbqoh1i8k",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/6oPfotkPvVfK3gU7nGk2AQ",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/14d6Ouli112FSQgp1Fb0ZC",
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/4Aty7kWvLveuHtfBbWHocn"
+        },
+        {
+            "id": "lancer413",
+            "refresh_token": "AQAL-WiKHxYOhi9Cz5_Gkg1XuEUgrrWuS7c1QACVIXJ6sThOjgxhIRe8pOmlj-zH3rHRkIWdhjTVjfcRlntMT-Evf9Twhtvh-q1J5UhdmQk2eZCWfDFa2Ox_qI1_iL_tCK0",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/0u68WDCFxVafNawmv9cCE2",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/4fQnEiGnNvlO0sBZVpMB0X",
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/1a7l6zn7zMckSXErnOtITx"
+        },
+        {
+            "id": "ashliao",
+            "refresh_token": "AQBdmn0DKK0nsaIwk-o94o9W-EWOTpkr4TaWWnJLA05s27paeHohS6fZYd5P4KkPQG52sfPc3uRZkFrXRkFTmgUX6d8V24Fuvhw5roXQY9IcAbg7pdeAQB-YX4ZLfeSaSfY",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/20wR5tbGqBYVLzqMTKpDeU",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/7AcX1qgoR1Z0EVjF2jA7Q3",
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/4hesnoegvp2DY8wvQFLHIq"
+        },
+        {
+            "id": "lolo.stevens",
+            "refresh_token": "AQD9rKi67-1tNAA1JJj2yJyvrqYjN-1gGyb4ujI7N_A2KV4c436fVXeggzKupxzM6A6Rubf2S_lagitRJrY8TjnVfcmA5ZI7farU1JzvhAMfjNZz5n4myJhvu9zKUDnlA2o",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/48i8BfNUFYgqkWSOoRdzX7",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/1afF7hbJFkWwuC4o4HYsRF",
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/1z1HXK06DRrljFJhAmDfOx"
+        },
+        {
+            "id": "laurenal2001",
+            "refresh_token": "AQAmwVydJP2yn2uwazsfwlaCHBIEY1S1XDvbRcY3sycR3Lhr2PFewePb-ztV3qM3l7fzBefa4SOtqT2jpl5MT5jUfTH-2iRcZSGCkG1Lh444onmIFmjWZt85KkMUKw24Gpw",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/08MT3DMYfiCQfgonopbANv",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/41VNw9YQBU0k7YnWVZEK2s",
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/01mQqvYnoxYCVQ3ivzRUF9"
+        },
+        {
+            "id": "phillip.xiang",
+            "refresh_token": "AQAbadBH2kK5RGbSbXmq1Y2ENcmhCZly8JB_efPPtcdUBtkBlsLH0mGYa4Qv4Yd0bhGJvQOoGj1iKzGtshstW0Va6aIgOvlv__9pfbJPeuR9eUJqT1vofsBksseZciu_uTs",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/2ir3XiAUP54TdQo63vopj0",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/1Mr6EL9LIJeZIt1f8S6eDa",
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/3ijnQE2D23VwBD7dJKPP8V"
+        },
+        {
+            "id": "22t3wgxq6o5qtwmbdy2hbvw6q",
+            "refresh_token": "AQCeFo3lWFGj5TGf6AiJRIjdwlNbPUTO15bsDX5s2PD5GLO5qp5xIYJe64kQx1iWdGFszQYstLCdxZOKBxcFDMN7rPH5f8Jlmvlp6dO_0mIwjOjQHbJBSmMF7pLWMLU7ibM",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/6JACGyMfz3bsqomY1rzLya",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/5LfLhiJ5Qr84znGsGRkxAn",
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/30jyFpobLFDSBrs1longOh"
+        },
+        {
+            "id": "ckellison",
+            "refresh_token": "AQDBdg-fBK4zyKUpQ1fjNj9Vz5OaBa0mGKxf5nwxmLKv6yz3Nq6U757t25a8fmTF24b7mIIg92ZCAleEXkmm5Oq8IX_k65scF-DcKzw4AUatx8tviFM-1Q5Tzc8yukZ4SQ0",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/3JDTV8ldflb1mhJURXMDW7",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/4cEY7ZppUkhW4NSb3KUA3T",
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/2Q9ccWEp0jxmS3S8CgUPuu"
+        }
+    ]
+}
