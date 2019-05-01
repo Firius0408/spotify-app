@@ -5,12 +5,15 @@ import base64
 import threading
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
+import sys
 
 client_id = 'bda7b557a026402d92584e140e291f57'
 client_secret = '160f08d795334c85a7227b695b1d54f3'
 refreshtokenme = 'AQBzPXpkLqDOctHGd092exRtHaw0WIg7wtgNB9BFKlJtMJboyq_EFHruvhUbLKp38AByxmss_kN1ViTwaroT0T_QbpOuEV9tn4O8AvXxsawTHnrap8pnwG98u3qYw1j8rS8'
 
 def update():
+    print('update initiated at ' + date.strftime("%Y-%m-%d %H:%M:%S"))
+    print('\n\n\n')
     url = 'https://accounts.spotify.com/api/token'
     headers = { 'Authorization': 'Basic ' + base64.b64encode(client_id + ':' + client_secret) }
     payload = {
@@ -19,40 +22,26 @@ def update():
     }
     r = requests.post(url, headers=headers, data=payload)
     if (r.status_code == 200):
-        access_token = r.json()['access_token']
+        accessTokenBot = r.json()['access_token']
 
     threads = list()
     for i in userFile['users']:
         print('updating playlists for user ' + i['id'])
-        x = threading.Thread(target=updateIndividual, args=(i, access_token))
+        x = threading.Thread(target=updateIndividual, args=(i, accessTokenBot))
         threads.append(x)
         x.start()
 
     for index, thread in enumerate(threads):
         thread.join()
 
-def accessTokenForUser(user):
-    refresh_token = user['refresh_token']
-    url = 'https://accounts.spotify.com/api/token'
-    headers = { 'Authorization': 'Basic ' + base64.b64encode(client_id + ':' + client_secret) }
-    payload = {
-        'grant_type': 'refresh_token',
-        'refresh_token': refresh_token
-    }
-    r = requests.post(url, headers=headers, data=payload)
-    if (r.status_code == 200):
-        access_token = r.json()['access_token']
-
-    return access_token
-
-def updateIndividual(user, access_token):
+def updateIndividual(user, accessTokenBot):
     playlisthreflong = user['playlisthreflong']
     playlisthrefmid = user['playlisthrefmid']
     playlisthrefshort = user['playlisthrefshort']
-    access_token0 = accessTokenForUser(user)
-    x = threading.Thread(target=updatePlaylist, args=(access_token0, access_token, 'long_term', playlisthreflong,))
-    y = threading.Thread(target=updatePlaylist, args=(access_token0, access_token, 'medium_term', playlisthrefmid,))
-    z = threading.Thread(target=updatePlaylist, args=(access_token0, access_token, 'short_term', playlisthrefshort,))
+    accessTokenUser = accessTokenForUser(user)
+    x = threading.Thread(target=updatePlaylist, args=(accessTokenUser, accessTokenBot, 'long_term', playlisthreflong,))
+    y = threading.Thread(target=updatePlaylist, args=(accessTokenUser, accessTokenBot, 'medium_term', playlisthrefmid,))
+    z = threading.Thread(target=updatePlaylist, args=(accessTokenUser, accessTokenBot, 'short_term', playlisthrefshort,))
     x.start()
     print('updating long playlist for user ' + user['id'])
     y.start()
@@ -66,10 +55,21 @@ def updateIndividual(user, access_token):
     z.join()
     print('finished updating short playlist for user ' + user['id'])
 
-def updatePlaylist(access_token0, access_token, term, playlisthref):
-    url = 'https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=' + term
-    headers = {'Authorization': 'Bearer ' + access_token0 }
+def accessTokenForUser(user):
+    refresh_token = user['refresh_token']
+    url = 'https://accounts.spotify.com/api/token'
+    headers = { 'Authorization': 'Basic ' + base64.b64encode(client_id + ':' + client_secret) }
+    payload = {
+        'grant_type': 'refresh_token',
+        'refresh_token': refresh_token
+    }
+    r = requests.post(url, headers=headers, data=payload)
+    if (r.status_code == 200):
+        return r.json()['access_token']
 
+def updatePlaylist(accessTokenUser, accessTokenPlaylist, term, playlisthref):
+    url = 'https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=' + term
+    headers = {'Authorization': 'Bearer ' + accessTokenUser }
     r = requests.get(url, headers=headers)
     uri = []
     for i in r.json()['items']:
@@ -77,7 +77,7 @@ def updatePlaylist(access_token0, access_token, term, playlisthref):
     
     url = playlisthref + '/tracks/'
     headers = { 
-            'Authorization': 'Bearer ' + access_token,
+            'Authorization': 'Bearer ' + accessTokenPlaylist,
             'Content-Type': 'application/json'
             }
     r = requests.put(url, headers=headers, data=json.dumps({'uris': uri}))
@@ -87,32 +87,56 @@ def playlist(userString):
     for i in userFile['users']:
         userids.append(i['id'])
 
-    userid = process.extractOne(userString, userids)[0]
+    userid = process.extractOne(userString, userids, score_cutoff=80)
+    if userid is None:
+        print('Unable to determine user you want')
+        return
+
+    userid = userid[0]
     for i in userFile['users']:
         if (i['id'] == userid):
             user = i
             break
 
-    accesstoken = accessTokenForUser(user)
-    print('creating playlists')
-    playlisthreflong = playlistIndividual(userid, accesstoken, "All-Time")
-    playlisthrefmid = playlistIndividual(userid, accesstoken, "the Past 6 Months")
-    playlisthrefshort = playlistIndividual(userid, accesstoken, "the Past 4 Weeks")
+    accessToken = accessTokenForUser(user)
+    print('creating playlists for user ' + userid)
+    x = threading.Thread(target=playlistIndividual, args=(userid, accessToken, "All-Time", 'long_term',))
+    y = threading.Thread(target=playlistIndividual, args=(userid, accessToken, "the Past 6 Months", 'medium_term',))
+    z = threading.Thread(target=playlistIndividual, args=(userid, accessToken, "the Past 4 Weeks", 'short_term',))
+    x.start()
+    print('creating long playlist for user ' + userid)
+    y.start()
+    print('creating mid playlist for user ' + userid)
+    z.start()
+    print('creating short playlist for user ' + userid)
+    x.join()
+    print('finished creating long playlist for user ' + userid)
+    y.join()
+    print('finished creating mid playlist for user ' + userid)
+    z.join()
+    print('finished creating short playlist for user ' + userid)
 
-def playlistIndividual(userid, accesstoken, term):
+def playlistIndividual(userid, accessToken, time, term):
     url = 'https://api.spotify.com/v1/users/' + userid + '/playlists/'
     headers =  { 
-            'Authorization': 'Bearer ' + accesstoken,
+            'Authorization': 'Bearer ' + accessToken,
             'Content-Type': 'application/json'
             }
-    payload = json.dumps({ 'name': "Top Songs of " + term + " as of " + date.strftime("%m") + "/" + date.strftime("%d") + "/" + date.strftime("%Y") })
+    payload = json.dumps({ 'name': "Top Songs of " + time + " as of " + date.strftime("%m") + "/" + date.strftime("%d") + "/" + date.strftime("%Y") })
     r = requests.post(url, headers=headers, data=payload)
-    return r.json()['href']
+    playlisthref = r.json()['href']
+    updatePlaylist(accessToken, accessToken, term, playlisthref)
 
 date = datetime.datetime.today()
-print('update initiated at ' + date.strftime("%Y-%m-%d %H:%M:%S"))
-print('\n\n\n')
-with open('./users.json') as json_file:
+with open(sys.path[0] + '/users.json') as json_file:
     userFile = json.load(json_file)
-#update()
-playlist("firius")
+
+if __name__ == '__main__':
+    if (len(sys.argv) > 1):
+        if (sys.argv[1] == 'list'):
+            for i in userFile['users']:
+                print i['id']
+        else:
+            playlist(sys.argv[1])
+    else:
+        update()
