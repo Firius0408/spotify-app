@@ -128,10 +128,9 @@ def playlistIndividual(userid, accessToken, time, term):
     updatePlaylist(accessToken, accessToken, term, playlisthref)
 
 date = datetime.datetime.today()
-with open(sys.path[0] + '/users.json') as json_file:
-    userFile = json.load(json_file)
-
 if __name__ == '__main__':
+    with open(sys.path[0] + '/users.json') as json_file:
+        userFile = json.load(json_file)
     if (len(sys.argv) > 1):
         if (sys.argv[1] == 'list'):
             for i in userFile['users']:
@@ -140,3 +139,7 @@ if __name__ == '__main__':
             playlist(sys.argv[1])
     else:
         update()
+
+else:
+    with open('./users.json') as json_file:
+        userFile = json.load(json_file)
