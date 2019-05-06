@@ -61,21 +61,21 @@ def newUser():
     playlisthreflong = createPlaylist(useridme, BotToken, json.dumps({ 'name': "Top Songs of All-Time for " + userid, 'public': 'true' }))
     playlisthrefmid = createPlaylist(useridme, BotToken, json.dumps({ 'name': "Top Songs of 6 Months for " + userid, 'public': 'true' }))
     playlisthrefshort = createPlaylist(useridme, BotToken, json.dumps({ 'name': "Top Songs of 4 Weeks for " + userid, 'public': 'true' }))
-    users = userFile['users']
-    users.append({'id': userid,
+    user = {'id': userid,
         'refresh_token': refreshToken,
         'playlisthreflong': playlisthreflong,
         'playlisthrefmid': playlisthrefmid,
-        'playlisthrefshort': playlisthrefshort})
+        'playlisthrefshort': playlisthrefshort}
+    updateIndividual(user, BotToken)
+    users = userFile['users']
+    users.append(user)
     userFile['users'] = users
     if __name__ == '__main__':
-        with open(sys.path[0] + '/users.json') as f:
+        with open(sys.path[0] + '/users.json', 'w') as f:
             json.dump(userFile, f, indent=4, separators=(',', ': '))
     else:
         with open('./users.json', 'w') as f:
             json.dump(userFile, f, indent=4, separators=(',', ': '))
-
-    update()
 
 def createPlaylist(userid, accessToken, payload):
     url = 'https://api.spotify.com/v1/users/' + userid + '/playlists/'
