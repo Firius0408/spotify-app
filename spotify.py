@@ -27,7 +27,7 @@ def newUser():
     print 'Go to the following url and paste your url after you login'
     redirect = raw_input(url + " ")
     queries = parse_qs(urlparse(redirect).query)
-    if (queries['state'][0] != state):
+    if ('state' not in queries or queries['state'][0] != state):
         print 'Error: state mismatch. Aborting...'
         return
 
@@ -68,9 +68,13 @@ def newUser():
         'playlisthrefmid': playlisthrefmid,
         'playlisthrefshort': playlisthrefshort})
     userFile['users'] = users
-    with open('./users.json', 'w') as f:
-        json.dump(userFile, f, indent=4, separators=(',', ': '))
-        
+    if __name__ == '__main__':
+        with open(sys.path[0] + '/users.json') as f:
+            json.dump(userFile, f, indent=4, separators=(',', ': '))
+    else:
+        with open('./users.json', 'w') as f:
+            json.dump(userFile, f, indent=4, separators=(',', ': '))
+
     update()
 
 def createPlaylist(userid, accessToken, payload):
@@ -133,9 +137,9 @@ def accessTokenForUser(user):
     url = 'https://accounts.spotify.com/api/token'
     headers = { 'Authorization': 'Basic ' + base64.b64encode(client_id + ':' + client_secret) }
     payload = {
-        'grant_type': 'refresh_token',
-        'refresh_token': refresh_token
-    }
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token
+            }
     r = requests.post(url, headers=headers, data=payload)
     if (r.status_code == 200):
         return r.json()['access_token']
@@ -202,11 +206,12 @@ if __name__ == '__main__':
         if (sys.argv[1] == 'list'):
             for i in userFile['users']:
                 print i['id']
+        elif (sys.argv[1] == 'newUser'):
+            newUser()
         else:
             playlist(sys.argv[1])
     else:
         update()
-
 else:
     with open('./users.json') as json_file:
         userFile = json.load(json_file)
