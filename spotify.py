@@ -20,6 +20,25 @@ def generateRandomString(length):
    possible = string.ascii_letters + string.digits 
    return ''.join(random.choice(possible) for i in range(length))
 
+def getUserFromString(userString):
+    userids = list()
+    for i in userFile['users']:
+        userids.append(i['id'])
+
+    userid = process.extractOne(userString, userids, score_cutoff=80)
+    if userid is None:
+        print('Unable to determine user you want')
+        return
+
+    user = None
+    userid = userid[0]
+    for i in userFile['users']:
+        if (i['id'] == userid):
+            user = i
+            break
+
+    return user
+
 def createPlaylist(userid, accessToken, payload):
     url = 'https://api.spotify.com/v1/users/' + userid + '/playlists/'
     headers =  { 
@@ -151,21 +170,7 @@ def newUser():
             json.dump(userFile, f, indent=4, separators=(',', ': '))
 
 def playlist(userString):
-    userids = list()
-    for i in userFile['users']:
-        userids.append(i['id'])
-
-    userid = process.extractOne(userString, userids, score_cutoff=80)
-    if userid is None:
-        print('Unable to determine user you want')
-        return
-
-    userid = userid[0]
-    for i in userFile['users']:
-        if (i['id'] == userid):
-            user = i
-            break
-
+    user = getUserFromString(userString)
     accessToken = accessTokenForUser(user)
     print('creating playlists for user ' + userid)
     x = threading.Thread(target=playlistIndividual, args=(userid, accessToken, "All-Time", 'long_term',))
