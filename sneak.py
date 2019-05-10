@@ -27,6 +27,23 @@ def getUserPlaylists(userString):
 
     return playlists
 
+def getSongsInPlaylist(s, accessToken, tracks, name):
+    url = s['tracks']['href'] + '?fields=next,items(track(name,id))'
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    i = 0
+    while True:
+        print i
+        i += 1
+        r = requests.get(url, headers=headers) 
+        for p in r.json()['items']:
+             tracks.append(p['track']['id'])
+             name[p['track']['id']] = p['track']['name']
+
+        if r.json()['next'] is None:
+            break
+
+        url = r.json()['next']
+
 def topSongsInPlaylists(userString):
     user = getUserFromString(userString)
     if user is None:
@@ -36,26 +53,21 @@ def topSongsInPlaylists(userString):
     accessToken = accessTokenForUser(user)
     tracks = list()
     name = {}
-    headers = {'Authorization': 'Bearer ' + accessToken}
+    threads = list()
     for i in playlists:
         for s in i:
             if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
                 print s['owner']['id']
                 continue
 
-            url = s['tracks']['href'] + '?fields=next,items(track(name,id))'
-            while True:
-                r = requests.get(url, headers=headers) 
-                for p in r.json()['items']:
-                     tracks.append(p['track']['id'])
-                     name[p['track']['id']] = p['track']['name']
-
-                if r.json()['next'] is None:
-                    break
-
-                url = r.json()['next']
+            x = threading.Thread(target=getSongsInPlaylist, args=(s, accessToken, tracks, name))
+            threads.append(x)
+            x.start()
 
 
+    for index, thread in enumerate(threads):
+        thread.join()
+    
     with open('./tracks.json', 'w') as f:
         json.dump(tracks, f, indent=4, separators=(', ', ': '))
 
@@ -72,14 +84,7 @@ def topSongsInPlaylists(userString):
     with open('./count.json', 'w') as f:
         json.dump(count, f, indent=4, separators=(', ', ': '))
 
-    #nameCount = {name[key] : value for key, value in count.items() }
-    nameCount = {}
-    for key, value in count.items():
-        #if name[key] in nameCount:
-            nameCount[name[key]] += value
-        #else:
-        #    nameCount[name[key]] = value
-
+    nameCount = {name[key] : value for key, value in count.items() }
     with open('./nameCount.json', 'w') as f:
         json.dump(nameCount, f, indent=4, separators=(', ', ': '))
 
