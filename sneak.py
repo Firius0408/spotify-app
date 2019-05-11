@@ -27,13 +27,57 @@ def getUserPlaylists(userString):
 
     return playlists
 
+def topArtistsInPlaylists(userString):
+    user = getUserFromString(userString)
+    if user is None:
+        return
+
+    playlists = getUserPlaylists(userString)
+    accessToken = accessTokenForUser(user)
+    artists = list()
+    threads = list()
+    for i in playlists:
+        for s in i:
+            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
+                print s['owner']['id']
+                continue
+
+            x = threading.Thread(target=getArtistsInPlaylist, args=(s, accessToken, artists))
+            threads.append(x)
+            x.start()
+
+
+    for index, thread in enumerate(threads):
+        thread.join()
+    
+    count = {i:artists.count(i) for i in artists}
+    if None in count.keys():
+        del count[None]
+
+    sortedCount = sorted(count.items(), key=operator.itemgetter(1), reverse=True)
+    with open('./sortedCount.json', 'w') as f:
+        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
+
+    return sortedCount
+
+def getArtistsInPlaylist(s, accessToken, artists):
+    url = s['tracks']['href'] + '?fields=next,items(track(artists))'
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    while True:
+        r = requests.get(url, headers=headers) 
+        for p in r.json()['items']:
+            for i in p['track']['artists']:
+                artists.append(i['name'])
+
+        if r.json()['next'] is None:
+            break
+
+        url = r.json()['next']
+
 def getSongsInPlaylist(s, accessToken, tracks, name):
     url = s['tracks']['href'] + '?fields=next,items(track(name,id))'
     headers = {'Authorization': 'Bearer ' + accessToken}
-    i = 0
     while True:
-        print i
-        i += 1
         r = requests.get(url, headers=headers) 
         for p in r.json()['items']:
              tracks.append(p['track']['id'])
