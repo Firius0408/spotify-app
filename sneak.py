@@ -27,39 +27,6 @@ def getUserPlaylists(userString):
 
     return playlists
 
-def topArtistsInPlaylists(userString):
-    user = getUserFromString(userString)
-    if user is None:
-        return
-
-    playlists = getUserPlaylists(userString)
-    accessToken = accessTokenForUser(user)
-    artists = list()
-    threads = list()
-    for i in playlists:
-        for s in i:
-            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
-                print s['owner']['id']
-                continue
-
-            x = threading.Thread(target=getArtistsInPlaylist, args=(s, accessToken, artists))
-            threads.append(x)
-            x.start()
-
-
-    for index, thread in enumerate(threads):
-        thread.join()
-    
-    count = {i:artists.count(i) for i in artists}
-    if None in count.keys():
-        del count[None]
-
-    sortedCount = sorted(count.items(), key=operator.itemgetter(1), reverse=True)
-    with open('./sortedCount.json', 'w') as f:
-        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
-
-    return sortedCount
-
 def getArtistsInPlaylist(s, accessToken, artists):
     url = s['tracks']['href'] + '?fields=next,items(track(artists))'
     headers = {'Authorization': 'Bearer ' + accessToken}
@@ -88,6 +55,39 @@ def getSongsInPlaylist(s, accessToken, tracks, name):
 
         url = r.json()['next']
 
+def topArtistsInPlaylists(userString):
+    user = getUserFromString(userString)
+    if user is None:
+        return
+
+    playlists = getUserPlaylists(userString)
+    accessToken = accessTokenForUser(user)
+    artists = list()
+    threads = list()
+    for i in playlists:
+        for s in i:
+            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
+                print s['owner']['id']
+                continue
+
+            x = threading.Thread(target=getArtistsInPlaylist, args=(s, accessToken, artists))
+            threads.append(x)
+            x.start()
+
+
+    for index, thread in enumerate(threads):
+        thread.join()
+    
+    count = {i:artists.count(i) for i in artists}
+    if None in count.keys():
+        del count[None]
+
+    sortedCount = sorted(count.items(), key=operator.itemgetter(1), reverse=True)
+    with open('./sortedArtistsCount.json', 'w') as f:
+        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
+
+    return sortedCount
+
 def topSongsInPlaylists(userString):
     user = getUserFromString(userString)
     if user is None:
@@ -112,29 +112,16 @@ def topSongsInPlaylists(userString):
     for index, thread in enumerate(threads):
         thread.join()
     
-    with open('./tracks.json', 'w') as f:
-        json.dump(tracks, f, indent=4, separators=(', ', ': '))
-
     if None in name.keys():
         del name[None]
-
-    with open('./name.json', 'w') as f:
-        json.dump(name, f, indent=4, separators=(', ', ': '))
 
     count = {i:tracks.count(i) for i in tracks} 
     if None in count.keys():
         del count[None]
         
-    with open('./count.json', 'w') as f:
-        json.dump(count, f, indent=4, separators=(', ', ': '))
-
     nameCount = {name[key] : value for key, value in count.items() }
-    with open('./nameCount.json', 'w') as f:
-        json.dump(nameCount, f, indent=4, separators=(', ', ': '))
-
     sortedCount = sorted(nameCount.items(), key=operator.itemgetter(1), reverse=True)
     with open('./sortedCount.json', 'w') as f:
         json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
 
     return sortedCount
-
