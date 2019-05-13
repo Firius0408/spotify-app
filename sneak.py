@@ -1,5 +1,6 @@
 from spotify import *
 import operator
+import time
 
 def getUserPlaylists(userString):
     user = getUserFromString(userString)
@@ -12,6 +13,12 @@ def getUserPlaylists(userString):
     headers = {'Authorization': 'Bearer ' + accessToken}
     while True:
         r = requests.get(url, headers=headers) 
+        if r.status_code != 200:
+            if r.status_code == 429:
+                time.sleep(float(r.headers['Retry-After']))
+
+            continue
+
         playlists.append(r.json()['items'])
         if r.json()['next'] is None:
             break
@@ -32,6 +39,12 @@ def getArtistsInPlaylist(s, accessToken, artists):
     headers = {'Authorization': 'Bearer ' + accessToken}
     while True:
         r = requests.get(url, headers=headers) 
+        if r.status_code != 200:
+            if r.status_code == 429:
+                time.sleep(float(r.headers['Retry-After']))
+
+            continue
+
         for p in r.json()['items']:
             for i in p['track']['artists']:
                 artists.append(i['name'])
@@ -46,6 +59,12 @@ def getSongsInPlaylist(s, accessToken, tracks, name):
     headers = {'Authorization': 'Bearer ' + accessToken}
     while True:
         r = requests.get(url, headers=headers) 
+        if r.status_code != 200:
+            if r.status_code == 429:
+                time.sleep(float(r.headers['Retry-After']))
+
+            continue
+
         for p in r.json()['items']:
              tracks.append(p['track']['id'])
              name[p['track']['id']] = p['track']['name']
@@ -67,7 +86,6 @@ def topArtistsInPlaylists(userString):
     for i in playlists:
         for s in i:
             if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
-                print s['owner']['id']
                 continue
 
             x = threading.Thread(target=getArtistsInPlaylist, args=(s, accessToken, artists))
@@ -101,7 +119,6 @@ def topSongsInPlaylists(userString):
     for i in playlists:
         for s in i:
             if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
-                print s['owner']['id']
                 continue
 
             x = threading.Thread(target=getSongsInPlaylist, args=(s, accessToken, tracks, name))
@@ -125,3 +142,7 @@ def topSongsInPlaylists(userString):
         json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
 
     return sortedCount
+
+def both(userString):
+    t = topSongsInPlaylists(userString)
+    b = topArtistsInPlaylists(userString)
