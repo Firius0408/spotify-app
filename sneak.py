@@ -1,6 +1,7 @@
 from spotify import *
 import operator
 import time
+import re
 
 def getUserPlaylists(userString):
     user = getUserFromString(userString)
@@ -74,6 +75,47 @@ def getSongsInPlaylist(s, accessToken, tracks, name):
 
         url = r.json()['next']
 
+def getSongsPlaylist(s, accessToken):
+    if "Past 4 Weeks" in s['name']:
+        directory = 'month'
+    elif "Past 6 Months" in s['name']:
+        directory = '6month'
+    elif "All-Time" in s['name']:
+        directory = 'all'
+    else:
+        return
+
+    match = re.search(r'\d{1,2}/\d{1,2}/\d{4}', s['name'])
+    if match is None:
+        print s['name']
+        return
+    
+    date = datetime.datetime.strptime(match.group(), '%m/%d/%Y').date()
+    filename = date.strftime('%Y-%m-%d')
+    print directory + '     ' + filename
+    url = s['tracks']['href'] + '?fields=next,items(track(name))'
+    name = list()
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    while True:
+        r = requests.get(url, headers=headers) 
+        if r.status_code != 200:
+            if r.status_code == 429:
+                time.sleep(float(r.headers['Retry-After']))
+
+            continue
+
+        for p in r.json()['items']:
+            name.append(p['track']['name'])
+
+        if r.json()['next'] is None:
+            break
+
+        url = r.json()['next']
+        
+    filtered = [i for i in name if i]
+    with open('./topsongs/' + directory + '/' + filename + '.json', 'w') as f:
+        json.dump(filtered, f, indent=4, separators=(', ', ': '))
+
 def topArtistsInPlaylists(userString):
     user = getUserFromString(userString)
     if user is None:
@@ -142,6 +184,27 @@ def topSongsInPlaylists(userString):
         json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
 
     return sortedCount
+
+def topSongsPlaylists(userString):
+    user = getUserFromString(userString)
+    if user is None:
+        return
+
+    playlists = getUserPlaylists(userString)
+    accessToken = accessTokenForUser(user)
+    threads = list()
+    for i in playlists:
+        for s in i:
+            if "Top Songs of " not in s['name']:
+                continue
+
+            x = threading.Thread(target=getSongsPlaylist, args=(s, accessToken))
+            threads.append(x)
+            x.start()
+
+
+    for index, thread in enumerate(threads):
+        thread.join()
 
 def both(userString):
     t = topSongsInPlaylists(userString)
