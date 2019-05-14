@@ -172,6 +172,7 @@ def newUser():
 def playlist(userString):
     user = getUserFromString(userString)
     accessToken = accessTokenForUser(user)
+    userid = user['id']
     print('creating playlists for user ' + userid)
     x = threading.Thread(target=playlistIndividual, args=(userid, accessToken, "All-Time", 'long_term',))
     y = threading.Thread(target=playlistIndividual, args=(userid, accessToken, "the Past 6 Months", 'medium_term',))
