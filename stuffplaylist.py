@@ -24,7 +24,13 @@ def playlistStuff():
 
         url = r.json()['next']
 
-    count = {i:tracks.count(i) for i in tracks}
-    sortedCount = sorted(count.items(), key=operator.itemgetter(1), reverse=True)
-    with open('./sortedCount.json', 'w') as f:
-        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
+    names = list()
+    repeat = list()
+    for i in tracks:
+        trackname = name[i]
+        if trackname in names:
+            repeat.append(trackname)
+        else:
+            names.append(trackname)
+
+    return repeat
