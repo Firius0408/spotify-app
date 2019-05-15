@@ -3,9 +3,8 @@ from sneak import *
 def playlistStuff():
     user = getUserFromString('firiusbob')
     accessToken = accessTokenForUser(user)
-    tracks = list()
-    name = {}
-    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks?fields=next,items(track(name,id))'
+    name = list()
+    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks?fields=next,items(track(name,artists(name)))'
     headers = {'Authorization': 'Bearer ' + accessToken}
     while True:
         r = requests.get(url, headers=headers) 
@@ -16,21 +15,29 @@ def playlistStuff():
             continue
 
         for p in r.json()['items']:
-             tracks.append(p['track']['id'])
-             name[p['track']['id']] = p['track']['name']
+             artists = list()
+             for i in p['track']['artists']:
+                 artists.append(i['name'])
 
+             name.append('Title: ' + p['track']['name'] + '    Artists: ' + ', '.join(artists))
         if r.json()['next'] is None:
             break
 
         url = r.json()['next']
 
-    names = list()
-    repeat = list()
-    for i in tracks:
-        trackname = name[i]
-        if trackname in names:
-            repeat.append(trackname)
-        else:
-            names.append(trackname)
+    while None in name:
+        name.remove(None)
 
-    return repeat
+    return findRepeats(name)
+
+def findRepeats(L):
+    seen = set()
+    seen2 = set()
+    seen_add = seen.add
+    seen2_add = seen2.add
+    for item in L:
+        if item in seen:
+            seen2_add(item)
+        else:
+            seen_add(item)
+    return list(seen2)
