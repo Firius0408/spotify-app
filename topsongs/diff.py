@@ -11,7 +11,9 @@ def comparePlaylists(p1, p2):
     setplaylist2 = set(playlist2)
     print 'Same songs:'
     print setplaylist1 & setplaylist2
+    print '\n\n\n'
     print 'Different songs in first playlist:'
     print setplaylist1 - setplaylist2
+    print '\n\n\n'
     print 'Different songs in second playlist:'
     print setplaylist2 - setplaylist1

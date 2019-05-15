@@ -90,7 +90,8 @@ def newUser():
         'playlisthreflong': playlisthreflong,
         'playlisthrefmid': playlisthrefmid,
         'playlisthrefshort': playlisthrefshort}
-    updateIndividual(user, BotToken)
+    x = threading.Thread(target=updateIndividual, args=(user, BotToken,))
+    x.start()
     users = userFile['users']
     users.append(user)
     userFile['users'] = users
@@ -100,6 +101,8 @@ def newUser():
     else:
         with open('./users.json', 'w') as f:
             json.dump(userFile, f, indent=4, separators=(',', ': '))
+
+    x.join()
 
 def playlist(userString):
     user = getUserFromString(userString)

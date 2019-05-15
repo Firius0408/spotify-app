@@ -56,7 +56,7 @@ def getArtistsInPlaylist(s, accessToken, artists):
         url = r.json()['next']
 
 def getSongsInPlaylist(s, accessToken, tracks, name):
-    url = s['tracks']['href'] + '?fields=next,items(track(name,id))'
+    url = s['tracks']['href'] + '?fields=next,items(track(name,id,artists,album(name)))'
     headers = {'Authorization': 'Bearer ' + accessToken}
     while True:
         r = requests.get(url, headers=headers) 
@@ -68,7 +68,11 @@ def getSongsInPlaylist(s, accessToken, tracks, name):
 
         for p in r.json()['items']:
              tracks.append(p['track']['id'])
-             name[p['track']['id']] = p['track']['name']
+             artists = list()
+             for i in p['track']['artists']:
+                 artists.append(i['name'])
+
+             name[p['track']['id']] = 'Title: ' + p['track']['name'] + '    Artists: ' + ', '.join(artists) + '     Album: ' + p['track']['album']['name']
 
         if r.json()['next'] is None:
             break
