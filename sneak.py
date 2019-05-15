@@ -35,7 +35,7 @@ def getUserPlaylists(userString):
 
     return playlists
 
-def getArtistsInPlaylist(s, accessToken, artists):
+def getArtistsInPlaylist(s, accessToken, artists, grouped):
     url = s['tracks']['href'] + '?fields=next,items(track(artists))'
     headers = {'Authorization': 'Bearer ' + accessToken}
     while True:
@@ -47,8 +47,15 @@ def getArtistsInPlaylist(s, accessToken, artists):
             continue
 
         for p in r.json()['items']:
-            for i in p['track']['artists']:
-                artists.append(i['name'])
+            if grouped:
+                trackartists = list()
+                for i in p['track']['artists']:
+                    trackartists.append(i['name'])
+    
+                artists.append(', '.join(trackartists))
+            else:
+                for i in p['track']['artists']:
+                    artists.append(i['name'])
 
         if r.json()['next'] is None:
             break
@@ -120,7 +127,7 @@ def getSongsPlaylist(s, accessToken):
     with open('./topsongs/' + directory + '/' + filename + '.json', 'w') as f:
         json.dump(filtered, f, indent=4, separators=(', ', ': '))
 
-def topArtistsInPlaylists(userString):
+def topArtistsInPlaylists(userString, grouped=False):
     user = getUserFromString(userString)
     if user is None:
         return
@@ -134,7 +141,7 @@ def topArtistsInPlaylists(userString):
             if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
                 continue
 
-            x = threading.Thread(target=getArtistsInPlaylist, args=(s, accessToken, artists))
+            x = threading.Thread(target=getArtistsInPlaylist, args=(s, accessToken, artists, grouped))
             threads.append(x)
             x.start()
 
