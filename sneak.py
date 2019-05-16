@@ -60,7 +60,7 @@ def getArtistsInPlaylist(s, accessToken, artists, grouped):
         if r.json()['next'] is None:
             break
 
-        url = r.json()['next']
+        url = r.json()['next'] + '?fields=next,items(track(artists))'
 
 def getSongsInPlaylist(s, accessToken, tracks, name):
     url = s['tracks']['href'] + '?fields=next,items(track(name,id,artists,album(name)))'
@@ -79,11 +79,11 @@ def getSongsInPlaylist(s, accessToken, tracks, name):
              for i in p['track']['artists']:
                  artists.append(i['name'])
 
-             name[p['track']['id']] = 'Title: ' + p['track']['name'] + '    Artists: ' + ','.join(artists) + '  Album: ' + p['track']['album']['name']
+             name[p['track']['id']] = 'Title: ' + p['track']['name'] + '    Artists: ' + ', '.join(artists) + '     Album: ' + p['track']['album']['name']
         if r.json()['next'] is None:
             break
 
-        url = r.json()['next']
+        url = r.json()['next'] + '?fields=next,items(track(name,id,artists,album(name)))'
 
 def getSongsPlaylist(s, accessToken):
     if "Past 4 Weeks" in s['name']:
@@ -120,7 +120,7 @@ def getSongsPlaylist(s, accessToken):
         if r.json()['next'] is None:
             break
 
-        url = r.json()['next']
+        url = r.json()['next'] + '?fields=next,items(track(name))'
         
     filtered = [i for i in name if i]
     with open('./topsongs/' + directory + '/' + filename + '.json', 'w') as f:
