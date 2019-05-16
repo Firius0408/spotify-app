@@ -79,8 +79,7 @@ def getSongsInPlaylist(s, accessToken, tracks, name):
              for i in p['track']['artists']:
                  artists.append(i['name'])
 
-             name[p['track']['id']] = 'Title: ' + p['track']['name'] + '    Artists: ' + ', '.join(artists) + '     Album: ' + p['track']['album']['name']
-
+             name[p['track']['id']] = 'Title: ' + p['track']['name'] + '    Artists: ' + ','.join(artists) + '  Album: ' + p['track']['album']['name']
         if r.json()['next'] is None:
             break
 
@@ -216,6 +215,20 @@ def topSongsPlaylists(userString):
 
     for index, thread in enumerate(threads):
         thread.join()
+
+def topArtists(userString, term='long_term'):
+    user = getUserFromString(userString)
+    accessToken = accessTokenForUser(user)
+    url = 'https://api.spotify.com/v1/me/top/artists?limit=50&time_range=' + term
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    r = requests.get(url, headers=headers)
+    artists = list()
+    for i in r.json()['items']:
+        artists.append(i['name'])
+
+    with open('./topArtists.json', 'w') as f:
+        json.dump(artists, f, indent=4, separators=(', ', ': '))
+    return artists
 
 def both(userString):
     t = topSongsInPlaylists(userString)
