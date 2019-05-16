@@ -1,4 +1,4 @@
-from sneak import *
+from spotify import *
 
 def playlistStuff():
     user = getUserFromString('firiusbob')
