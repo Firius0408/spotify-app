@@ -21,14 +21,9 @@ def getUserFromString(userString):
         print('Unable to determine user you want')
         return
 
-    user = None
-    userid = userid[0]
     for i in userFile['users']:
-        if (i['id'] == userid):
-            user = i
-            break
-
-    return user
+        if (i['id'] == userid[0]):
+            return i
 
 def createPlaylist(userid, accessToken, payload):
     url = 'https://api.spotify.com/v1/users/' + userid + '/playlists/'
