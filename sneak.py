@@ -25,15 +25,30 @@ def getUserPlaylists(userString):
             break
 
         url = r.json()['next']
-        
-#    if __name__ == '__main__':
-#        with open(sys.path[0] + '/playlists.json', 'w') as f:
-#            json.dump(playlists, f, indent=4, separators=(',', ': '))
-#    else:
-#        with open('./playlists.json', 'w') as f:
-#            json.dump(playlists, f, indent=4, separators=(',', ': '))
 
     return playlists
+
+def getPlaylist(userString, playlistString):
+    user = getUserFromString(userString)
+    playlist = getUserPlaylists(userString)
+    if user is None:
+        return
+
+    playlists = getUserPlaylists(userString)
+    playlistnames = list()
+    for i in playlists:
+        for s in i:
+            playlistnames.append(s['name'])
+
+    playlist = process.extractOne(playlistString, playlistnames, score_cutoff=80)
+    if playlist is None:
+        print ('Unable to determine playlist')
+        return
+
+    for i in playlists:
+        for s in i:
+            if s['name'] == playlist[0]:
+                return s
 
 def getArtistsInPlaylist(s, accessToken, artists, grouped):
     url = s['tracks']['href'] + '?fields=next,items(track(artists))'
@@ -152,6 +167,22 @@ def topArtistsInPlaylists(userString, grouped=False):
     if None in count.keys():
         del count[None]
 
+    sortedCount = sorted(count.items(), key=operator.itemgetter(1), reverse=True)
+    with open('./sortedArtistsCount.json', 'w') as f:
+        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
+
+    return sortedCount
+
+def topArtistsInPlaylist(userString, playlistString, grouped=False):
+    user = getUserFromString(userString)
+    playlist = getPlaylist(userString, playlistString)
+    accessToken = accessTokenForUser(user)
+    artists = list()
+    getArtistsInPlaylist(playlist, accessToken, artists, grouped)
+    count = {i:artists.count(i) for i in artists} 
+    if None in count.keys():
+        del count[None]
+        
     sortedCount = sorted(count.items(), key=operator.itemgetter(1), reverse=True)
     with open('./sortedArtistsCount.json', 'w') as f:
         json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
