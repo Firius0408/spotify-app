@@ -120,7 +120,6 @@ def playlist(userString):
     z.join()
     print('finished creating short playlist for user ' + userid)
 
-date = datetime.datetime.today()
 if __name__ == '__main__':
     if (len(sys.argv) > 1):
         if (sys.argv[1] == 'list'):
