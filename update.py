@@ -33,14 +33,14 @@ def accessTokenForUser(user):
     if (r.status_code == 200):
         return r.json()['access_token']
 
-def updateIndividual(user, BotToken):
+def updateIndividual(user, botToken):
     playlisthreflong = user['playlisthreflong']
     playlisthrefmid = user['playlisthrefmid']
     playlisthrefshort = user['playlisthrefshort']
     accessTokenUser = accessTokenForUser(user)
-    x = threading.Thread(target=updatePlaylist, args=(accessTokenUser, BotToken, 'long_term', playlisthreflong,))
-    y = threading.Thread(target=updatePlaylist, args=(accessTokenUser, BotToken, 'medium_term', playlisthrefmid,))
-    z = threading.Thread(target=updatePlaylist, args=(accessTokenUser, BotToken, 'short_term', playlisthrefshort,))
+    x = threading.Thread(target=updatePlaylist, args=(accessTokenUser, botToken, 'long_term', playlisthreflong,))
+    y = threading.Thread(target=updatePlaylist, args=(accessTokenUser, botToken, 'medium_term', playlisthrefmid,))
+    z = threading.Thread(target=updatePlaylist, args=(accessTokenUser, botToken, 'short_term', playlisthrefshort,))
     x.start()
     print('updating long playlist for user ' + user['id'])
     y.start()
@@ -72,11 +72,11 @@ def updatePlaylist(accessTokenUser, accessTokenPlaylist, term, playlisthref):
 def update():
     print('update initiated at ' + date.strftime("%Y-%m-%d %H:%M:%S"))
     print('\n\n\n')
-    BotToken = accessTokenBot()
+    botToken = accessTokenBot()
     threads = list()
     for i in userFile['users']:
         print('updating playlists for user ' + i['id'])
-        x = threading.Thread(target=updateIndividual, args=(i, BotToken))
+        x = threading.Thread(target=updateIndividual, args=(i, botToken))
         threads.append(x)
         x.start()
 

@@ -189,6 +189,45 @@ def topArtistsInPlaylist(userString, playlistString, grouped=False):
 
     return sortedCount
 
+def topArtistsInPlaylisthref(playlisthref, grouped=False):
+    accessToken = accessTokenBot()
+    url = playlisthref + '?fields=next,items(track(artists))'
+    artists = list()
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    while True:
+        r = requests.get(url, headers=headers) 
+        if r.status_code != 200:
+            if r.status_code == 429:
+                time.sleep(float(r.headers['Retry-After']))
+
+            continue
+
+        for p in r.json()['items']:
+            if grouped:
+                trackartists = list()
+                for i in p['track']['artists']:
+                    trackartists.append(i['name'])
+    
+                artists.append(', '.join(trackartists))
+            else:
+                for i in p['track']['artists']:
+                    artists.append(i['name'])
+
+        if r.json()['next'] is None:
+            break
+
+        url = r.json()['next'] + '?fields=next,items(track(artists))'
+
+    count = {i:artists.count(i) for i in artists} 
+    if None in count.keys():
+        del count[None]
+        
+    sortedCount = sorted(count.items(), key=operator.itemgetter(1), reverse=True)
+    with open('./sortedArtistsCount.json', 'w') as f:
+        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
+
+    return sortedCount
+
 def topSongsInPlaylists(userString):
     user = getUserFromString(userString)
     if user is None:

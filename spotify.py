@@ -35,7 +35,7 @@ def createPlaylist(userid, accessToken, payload):
     return r.json()['href']
 
 def playlistIndividual(userid, accessToken, time, term):
-    payload = json.dumps({ 'name': "Top Songs of " + time + " as of " + date.strftime("%m") + "/" + date.strftime("%d") + "/" + date.strftime("%Y") })
+    payload = json.dumps({ 'name': "Top Songs of " + time + " as of " + date.strftime("%m/%d/%Y")})
     playlisthref = createPlaylist(userid, accessToken, payload)
     updatePlaylist(accessToken, accessToken, term, playlisthref)
 
@@ -70,22 +70,22 @@ def newUser():
     print userid
     print refreshToken
     print r.json()['display_name']
-    BotToken = accessTokenBot()
+    botToken = accessTokenBot()
     for i in userFile['users']:
         if (userid == i['id'] and i['refresh_token'] is not None):
             print 'user already exists'
-            updateIndividual(i, BotToken)
+            updateIndividual(i, botToken)
             return
 
-    playlisthreflong = createPlaylist(useridme, BotToken, json.dumps({ 'name': "Top Songs of All-Time for " + userid, 'public': 'true' }))
-    playlisthrefmid = createPlaylist(useridme, BotToken, json.dumps({ 'name': "Top Songs of 6 Months for " + userid, 'public': 'true' }))
-    playlisthrefshort = createPlaylist(useridme, BotToken, json.dumps({ 'name': "Top Songs of 4 Weeks for " + userid, 'public': 'true' }))
+    playlisthreflong = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of All-Time for " + userid, 'public': 'true' }))
+    playlisthrefmid = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of 6 Months for " + userid, 'public': 'true' }))
+    playlisthrefshort = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of 4 Weeks for " + userid, 'public': 'true' }))
     user = {'id': userid,
         'refresh_token': refreshToken,
         'playlisthreflong': playlisthreflong,
         'playlisthrefmid': playlisthrefmid,
         'playlisthrefshort': playlisthrefshort}
-    x = threading.Thread(target=updateIndividual, args=(user, BotToken,))
+    x = threading.Thread(target=updateIndividual, args=(user, botToken,))
     x.start()
     users = userFile['users']
     users.append(user)
