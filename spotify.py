@@ -5,12 +5,14 @@ import random
 import string
 from urlparse import urlparse, parse_qs
 
-redirect_uri = 'http://localhost:8081/callback'
+redirect_uri = 'http://localhost:8081/callback' # not used, needed to satisfy spotify auth
 
+#generates a random string. Used for state in auth
 def generateRandomString(length):
    possible = string.ascii_letters + string.digits 
    return ''.join(random.choice(possible) for i in range(length))
 
+#searches users.json and returns user object from string arg
 def getUserFromString(userString):
     userids = list()
     for i in userFile['users']:
@@ -25,6 +27,7 @@ def getUserFromString(userString):
         if (i['id'] == userid[0]):
             return i
 
+#creates playlist. Pass in userid and accessToken for user. Payload contains playlist's name. Returns playlist's href
 def createPlaylist(userid, accessToken, payload):
     url = 'https://api.spotify.com/v1/users/' + userid + '/playlists/'
     headers =  { 
@@ -34,17 +37,19 @@ def createPlaylist(userid, accessToken, payload):
     r = requests.post(url, headers=headers, data=payload)
     return r.json()['href']
 
+# creates snapshot playlist of user with given userid, accessToken, time and term (time and term should match)
 def playlistIndividual(userid, accessToken, time, term):
     payload = json.dumps({ 'name': "Top Songs of " + time + " as of " + date.strftime("%m/%d/%Y")})
     playlisthref = createPlaylist(userid, accessToken, payload)
     updatePlaylist(accessToken, accessToken, term, playlisthref)
 
+# auth new user, add to users.json, create continuously updated playlists
 def newUser():
     state = generateRandomString(16)
     scope = 'playlist-modify-public playlist-modify-private user-top-read'
     url = 'https://accounts.spotify.com/authorize?client_id=' + client_id + '&response_type=code&redirect_uri=' + redirect_uri + '&scope=' + scope + '&state=' + state
     print 'Go to the following url and paste your url after you login'
-    redirect = raw_input(url + " ")
+    redirect = raw_input(url + " ") # janky way of authorizing user. Go to url and parse the returned url for code
     queries = parse_qs(urlparse(redirect).query)
     if ('state' not in queries or queries['state'][0] != state):
         print 'Error: state mismatch. Aborting...'
@@ -99,6 +104,7 @@ def newUser():
 
     x.join()
 
+# creates the three snapshot playlists for the user string
 def playlist(userString):
     user = getUserFromString(userString)
     accessToken = accessTokenForUser(user)
