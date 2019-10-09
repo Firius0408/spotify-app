@@ -42,6 +42,7 @@ def updateIndividual(user, botToken):
     playlisthrefshort = user['playlisthrefshort']
     accessTokenUser = accessTokenForUser(user)
     if accessTokenUser is None:
+        print 'app not authorized for user ' + user['id']
         return
 
     x = threading.Thread(target=updatePlaylist, args=(accessTokenUser, botToken, 'long_term', playlisthreflong,))
