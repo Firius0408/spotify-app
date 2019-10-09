@@ -43,7 +43,9 @@ def playlistIndividual(userid, accessToken, time, term):
     playlisthref = createPlaylist(userid, accessToken, payload)
     updatePlaylist(accessToken, accessToken, term, playlisthref)
 
-def reAuthUser():
+# auth new user, add to users.json, create continuously updated playlists
+# re auth old user
+def authUser():
     state = generateRandomString(16)
     scope = 'playlist-modify-public playlist-modify-private user-top-read'
     url = 'https://accounts.spotify.com/authorize?client_id=' + client_id + '&response_type=code&redirect_uri=' + redirect_uri + '&scope=' + scope + '&state=' + state
@@ -66,6 +68,7 @@ def reAuthUser():
     if (r.status_code == 200):
         accessToken = r.json()['access_token']
         refreshToken = r.json()['refresh_token']
+
     url = 'https://api.spotify.com/v1/me'
     headers = { 'Authorization': 'Bearer ' + accessToken }
     r = requests.get(url, headers=headers)
@@ -74,71 +77,30 @@ def reAuthUser():
     print refreshToken
     print r.json()['display_name']
     users = userFile['users']
+    flag = False
     for i in users:
         if (userid == i['id']):
             print 'user found'
             i['refresh_token'] = refreshToken
-            userFile['users'] = users
-            if __name__ == '__main__':
-                with open(sys.path[0] + '/users.json', 'w') as f:
-                    json.dump(userFile, f, indent=4, separators=(',', ': '))
-            else:
-                with open('./users.json', 'w') as f:
-                    json.dump(userFile, f, indent=4, separators=(',', ': '))
-
+            flag = True
             break
 
-# auth new user, add to users.json, create continuously updated playlists
-def newUser():
-    state = generateRandomString(16)
-    scope = 'playlist-modify-public playlist-modify-private user-top-read'
-    url = 'https://accounts.spotify.com/authorize?client_id=' + client_id + '&response_type=code&redirect_uri=' + redirect_uri + '&scope=' + scope + '&state=' + state
-    print 'Go to the following url and paste your url after you login'
-    redirect = raw_input(url + " ") # janky way of authorizing user. Go to url and parse the returned url for code
-    queries = parse_qs(urlparse(redirect).query)
-    if ('state' not in queries or queries['state'][0] != state):
-        print 'Error: state mismatch. Aborting...'
-        return
+    if not flag:
+        print 'new user found'
+        botToken = accessTokenBot()
+        playlisthreflong = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of All-Time for " + userid, 'public': 'true' }))
+        playlisthrefmid = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of 6 Months for " + userid, 'public': 'true' }))
+        playlisthrefshort = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of 4 Weeks for " + userid, 'public': 'true' }))
+        user = {'id': userid,
+            'refresh_token': refreshToken,
+            'playlisthreflong': playlisthreflong,
+            'playlisthrefmid': playlisthrefmid,
+            'playlisthrefshort': playlisthrefshort}
+        x = threading.Thread(target=updateIndividual, args=(user, botToken,))
+        x.start()
+        users.append(user)
+        x.join()
 
-    code = queries['code'][0]
-    url = 'https://accounts.spotify.com/api/token'
-    headers = { 'Authorization': 'Basic ' + base64.b64encode(client_id + ':' + client_secret) }
-    payload = {
-            'code': code,
-            'redirect_uri': redirect_uri,
-            'grant_type': 'authorization_code'
-            }
-    r = requests.post(url, headers=headers, data=payload)
-    if (r.status_code == 200):
-        accessToken = r.json()['access_token']
-        refreshToken = r.json()['refresh_token']
-
-    url = 'https://api.spotify.com/v1/me'
-    headers = { 'Authorization': 'Bearer ' + accessToken }
-    r = requests.get(url, headers=headers)
-    userid = r.json()['id']
-    print userid
-    print refreshToken
-    print r.json()['display_name']
-    for i in userFile['users']:
-        if (userid == i['id'] and i['refresh_token'] is not None):
-            print 'user already exists'
-            updateIndividual(i, botToken)
-            return
-
-    botToken = accessTokenBot()
-    playlisthreflong = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of All-Time for " + userid, 'public': 'true' }))
-    playlisthrefmid = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of 6 Months for " + userid, 'public': 'true' }))
-    playlisthrefshort = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of 4 Weeks for " + userid, 'public': 'true' }))
-    user = {'id': userid,
-        'refresh_token': refreshToken,
-        'playlisthreflong': playlisthreflong,
-        'playlisthrefmid': playlisthrefmid,
-        'playlisthrefshort': playlisthrefshort}
-    x = threading.Thread(target=updateIndividual, args=(user, botToken,))
-    x.start()
-    users = userFile['users']
-    users.append(user)
     userFile['users'] = users
     if __name__ == '__main__':
         with open(sys.path[0] + '/users.json', 'w') as f:
@@ -146,8 +108,6 @@ def newUser():
     else:
         with open('./users.json', 'w') as f:
             json.dump(userFile, f, indent=4, separators=(',', ': '))
-
-    x.join()
 
 # creates the three snapshot playlists for the user string
 def playlist(userString):
