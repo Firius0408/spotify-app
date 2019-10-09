@@ -41,6 +41,9 @@ def updateIndividual(user, botToken):
     playlisthrefmid = user['playlisthrefmid']
     playlisthrefshort = user['playlisthrefshort']
     accessTokenUser = accessTokenForUser(user)
+    if accessTokenUser is None:
+        return
+
     x = threading.Thread(target=updatePlaylist, args=(accessTokenUser, botToken, 'long_term', playlisthreflong,))
     y = threading.Thread(target=updatePlaylist, args=(accessTokenUser, botToken, 'medium_term', playlisthrefmid,))
     z = threading.Thread(target=updatePlaylist, args=(accessTokenUser, botToken, 'short_term', playlisthrefshort,))

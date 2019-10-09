@@ -57,6 +57,13 @@
             "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/0u68WDCFxVafNawmv9cCE2"
         },
         {
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/4hesnoegvp2DY8wvQFLHIq",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/7AcX1qgoR1Z0EVjF2jA7Q3",
+            "id": "ashliao",
+            "refresh_token": "AQBdmn0DKK0nsaIwk-o94o9W-EWOTpkr4TaWWnJLA05s27paeHohS6fZYd5P4KkPQG52sfPc3uRZkFrXRkFTmgUX6d8V24Fuvhw5roXQY9IcAbg7pdeAQB-YX4ZLfeSaSfY",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/20wR5tbGqBYVLzqMTKpDeU"
+        },
+        {
             "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/1z1HXK06DRrljFJhAmDfOx",
             "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/1afF7hbJFkWwuC4o4HYsRF",
             "id": "lolo.stevens",
@@ -71,6 +78,13 @@
             "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/08MT3DMYfiCQfgonopbANv"
         },
         {
+            "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/3ijnQE2D23VwBD7dJKPP8V",
+            "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/1Mr6EL9LIJeZIt1f8S6eDa",
+            "id": "phillip.xiang",
+            "refresh_token": "AQAbadBH2kK5RGbSbXmq1Y2ENcmhCZly8JB_efPPtcdUBtkBlsLH0mGYa4Qv4Yd0bhGJvQOoGj1iKzGtshstW0Va6aIgOvlv__9pfbJPeuR9eUJqT1vofsBksseZciu_uTs",
+            "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/2ir3XiAUP54TdQo63vopj0"
+        },
+        {
             "playlisthrefshort": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/30jyFpobLFDSBrs1longOh",
             "playlisthrefmid": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/5LfLhiJ5Qr84znGsGRkxAn",
             "id": "22t3wgxq6o5qtwmbdy2hbvw6q",
@@ -83,6 +97,13 @@
             "id": "ckellison",
             "refresh_token": "AQDBdg-fBK4zyKUpQ1fjNj9Vz5OaBa0mGKxf5nwxmLKv6yz3Nq6U757t25a8fmTF24b7mIIg92ZCAleEXkmm5Oq8IX_k65scF-DcKzw4AUatx8tviFM-1Q5Tzc8yukZ4SQ0",
             "playlisthreflong": "https://api.spotify.com/v1/users/ohjber0jdol59842ilmd8w0a2/playlists/3JDTV8ldflb1mhJURXMDW7"
+        },
+        {
+            "playlisthrefshort": "https://api.spotify.com/v1/playlists/0aafFnY1Nt69XgMyUTRNdj",
+            "playlisthrefmid": "https://api.spotify.com/v1/playlists/0O36cTKYlopZ2bTXVM9HEc",
+            "id": "arvinalmessi10",
+            "refresh_token": "AQBi9CP0NsQpPvsaRQl169lobZVf8vBPOMZUP2jM_CXQzhC5mjH6l86CLGmCnvoc24juXwfTO1oFRRavuvjYbe9C7-ul6067gyhsRCWar-p0-sIajj-lddE8PcNBYvqPDz99CQ",
+            "playlisthreflong": "https://api.spotify.com/v1/playlists/6BmMlbGsvVst7hW855uBl3"
         }
     ]
 }
