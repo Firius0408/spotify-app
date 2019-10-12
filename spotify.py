@@ -96,10 +96,8 @@ def authUser():
             'playlisthreflong': playlisthreflong,
             'playlisthrefmid': playlisthrefmid,
             'playlisthrefshort': playlisthrefshort}
-        x = threading.Thread(target=updateIndividual, args=(user, botToken,))
-        x.start()
+        updateIndividual(user, botToken)
         users.append(user)
-        x.join()
 
     userFile['users'] = users
     if __name__ == '__main__':
