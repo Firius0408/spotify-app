@@ -300,6 +300,72 @@ def topArtists(userString, term='long_term'):
         json.dump(artists, f, indent=4, separators=(', ', ': '))
     return artists
 
+def songPopularity(userString, playlistString):
+    user = getUserFromString(userString)
+    playlist = getPlaylist(userString, playlistString)
+    accessToken = accessTokenForUser(user)
+    popularity = list()
+    name = {}
+    url = playlist['tracks']['href'] + '?fields=next,items(track(name,id,artists,popularity,album(name)))'
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    while True:
+        r = requests.get(url, headers=headers) 
+        if r.status_code != 200:
+            if r.status_code == 429:
+                time.sleep(float(r.headers['Retry-After']))
+
+            continue
+
+        for p in r.json()['items']:
+            popularity.append(p['track']['popularity'])
+            artists = list()
+            for i in p['track']['artists']:
+                artists.append(i['name'])
+
+            name['Title: ' + p['track']['name'] + '    Artists: ' + ', '.join(artists) + '     Album: ' + p['track']['album']['name']] = p['track']['popularity']
+        if r.json()['next'] is None:
+            break
+
+        url = r.json()['next'] + '?fields=next,items(track(name,id,artists,album(name)))'
+
+    sortedCount = sorted(name.items(), key=operator.itemgetter(1), reverse=True)
+    with open('./songPopularity.json', 'w') as f:
+        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
+    
+    return sortedCount
+    
+def songPopularityhref(playlisthref):
+    accessToken = accessTokenBot()
+    popularity = list()
+    name = {}
+    url = playlisthref + '?fields=next,items(track(name,id,artists,popularity,album(name)))'
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    while True:
+        r = requests.get(url, headers=headers) 
+        if r.status_code != 200:
+            if r.status_code == 429:
+                time.sleep(float(r.headers['Retry-After']))
+
+            continue
+
+        for p in r.json()['items']:
+            popularity.append(p['track']['popularity'])
+            artists = list()
+            for i in p['track']['artists']:
+                artists.append(i['name'])
+
+            name['Title: ' + p['track']['name'] + '    Artists: ' + ', '.join(artists) + '     Album: ' + p['track']['album']['name']] = p['track']['popularity']
+        if r.json()['next'] is None:
+            break
+
+        url = r.json()['next'] + '?fields=next,items(track(name,id,artists,album(name)))'
+
+    sortedCount = sorted(name.items(), key=operator.itemgetter(1), reverse=True)
+    with open('./songPopularity.json', 'w') as f:
+        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
+    
+    return sortedCount
+
 def playlistRepeats(userString, playlistString):
     user = getUserFromString(userString)
     playlist = getPlaylist(userString, playlistString)
