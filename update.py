@@ -83,7 +83,7 @@ def update():
     print('update initiated at ' + date.strftime("%Y-%m-%d %H:%M:%S"))
     print('\n\n\n')
     botToken = accessTokenBot()
-    threads = list()
+    threads = []
     for i in userFile['users']:
         print('updating playlists for user ' + i['id'])
         x = threading.Thread(target=updateIndividual, args=(i, botToken))

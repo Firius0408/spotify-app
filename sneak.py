@@ -9,7 +9,7 @@ def getUserPlaylists(userString):
         return
 
     accessToken = accessTokenForUser(user)
-    playlists = list()
+    playlists = []
     url = 'https://api.spotify.com/v1/me/playlists?limit=50'
     headers = {'Authorization': 'Bearer ' + accessToken}
     while True:
@@ -35,7 +35,7 @@ def getPlaylist(userString, playlistString):
         return
 
     playlists = getUserPlaylists(userString)
-    playlistnames = list()
+    playlistnames = []
     for i in playlists:
         for s in i:
             playlistnames.append(s['name'])
@@ -63,7 +63,7 @@ def getArtistsInPlaylist(s, accessToken, artists, grouped):
 
         for p in r.json()['items']:
             if grouped:
-                trackartists = list()
+                trackartists = []
                 for i in p['track']['artists']:
                     trackartists.append(i['name'])
     
@@ -90,7 +90,7 @@ def getSongsInPlaylist(s, accessToken, tracks, name):
 
         for p in r.json()['items']:
              tracks.append(p['track']['id'])
-             artists = list()
+             artists = []
              for i in p['track']['artists']:
                  artists.append(i['name'])
 
@@ -119,7 +119,7 @@ def getSongsPlaylist(s, accessToken):
     filename = date.strftime('%Y-%m-%d')
     print directory + '     ' + filename
     url = s['tracks']['href'] + '?fields=next,items(track(name))'
-    name = list()
+    name = []
     headers = {'Authorization': 'Bearer ' + accessToken}
     while True:
         r = requests.get(url, headers=headers) 
@@ -148,8 +148,8 @@ def topArtistsInPlaylists(userString, grouped=False):
 
     playlists = getUserPlaylists(userString)
     accessToken = accessTokenForUser(user)
-    artists = list()
-    threads = list()
+    artists = []
+    threads = []
     for i in playlists:
         for s in i:
             if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
@@ -177,7 +177,7 @@ def topArtistsInPlaylist(userString, playlistString, grouped=False):
     user = getUserFromString(userString)
     playlist = getPlaylist(userString, playlistString)
     accessToken = accessTokenForUser(user)
-    artists = list()
+    artists = []
     getArtistsInPlaylist(playlist, accessToken, artists, grouped)
     count = {i:artists.count(i) for i in artists} 
     if None in count.keys():
@@ -192,7 +192,7 @@ def topArtistsInPlaylist(userString, playlistString, grouped=False):
 def topArtistsInPlaylisthref(playlisthref, grouped=False):
     accessToken = accessTokenBot()
     url = playlisthref + '?fields=next,items(track(artists))'
-    artists = list()
+    artists = []
     headers = {'Authorization': 'Bearer ' + accessToken}
     while True:
         r = requests.get(url, headers=headers) 
@@ -204,7 +204,7 @@ def topArtistsInPlaylisthref(playlisthref, grouped=False):
 
         for p in r.json()['items']:
             if grouped:
-                trackartists = list()
+                trackartists = []
                 for i in p['track']['artists']:
                     trackartists.append(i['name'])
     
@@ -235,9 +235,9 @@ def topSongsInPlaylists(userString):
 
     playlists = getUserPlaylists(userString)
     accessToken = accessTokenForUser(user)
-    tracks = list()
+    tracks = []
     name = {}
-    threads = list()
+    threads = []
     for i in playlists:
         for s in i:
             if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
@@ -272,7 +272,7 @@ def topSongsPlaylists(userString):
 
     playlists = getUserPlaylists(userString)
     accessToken = accessTokenForUser(user)
-    threads = list()
+    threads = []
     for i in playlists:
         for s in i:
             if "Top Songs of " not in s['name']:
@@ -292,7 +292,7 @@ def topArtists(userString, term='long_term'):
     url = 'https://api.spotify.com/v1/me/top/artists?limit=50&time_range=' + term
     headers = {'Authorization': 'Bearer ' + accessToken}
     r = requests.get(url, headers=headers)
-    artists = list()
+    artists = []
     for i in r.json()['items']:
         artists.append(i['name'])
 
@@ -304,7 +304,7 @@ def songPopularity(userString, playlistString):
     user = getUserFromString(userString)
     playlist = getPlaylist(userString, playlistString)
     accessToken = accessTokenForUser(user)
-    popularity = list()
+    popularity = []
     name = {}
     url = playlist['tracks']['href'] + '?fields=next,items(track(name,id,artists,popularity,album(name)))'
     headers = {'Authorization': 'Bearer ' + accessToken}
@@ -318,7 +318,7 @@ def songPopularity(userString, playlistString):
 
         for p in r.json()['items']:
             popularity.append(p['track']['popularity'])
-            artists = list()
+            artists = []
             for i in p['track']['artists']:
                 artists.append(i['name'])
 
@@ -336,7 +336,7 @@ def songPopularity(userString, playlistString):
     
 def songPopularityhref(playlisthref):
     accessToken = accessTokenBot()
-    popularity = list()
+    popularity = []
     name = {}
     url = playlisthref + '?fields=next,items(track(name,id,artists,popularity,album(name)))'
     headers = {'Authorization': 'Bearer ' + accessToken}
@@ -350,7 +350,7 @@ def songPopularityhref(playlisthref):
 
         for p in r.json()['items']:
             popularity.append(p['track']['popularity'])
-            artists = list()
+            artists = []
             for i in p['track']['artists']:
                 artists.append(i['name'])
 
@@ -370,7 +370,7 @@ def playlistRepeats(userString, playlistString):
     user = getUserFromString(userString)
     playlist = getPlaylist(userString, playlistString)
     accessToken = accessTokenForUser(user)
-    name = list()
+    name = []
     url = playlist['tracks']['href'] + '?fields=next,items(track(name,artists(name)))'
     headers = {'Authorization': 'Bearer ' + accessToken}
     while True:
@@ -382,7 +382,7 @@ def playlistRepeats(userString, playlistString):
             continue
 
         for p in r.json()['items']:
-             artists = list()
+             artists = []
              for i in p['track']['artists']:
                  artists.append(i['name'])
 
@@ -400,7 +400,7 @@ def playlistRepeats(userString, playlistString):
 def playlistRepeatshref(playlisthref):
     accessToken = accessTokenBot()
     url = playlisthref + '?fields=next,items(track(name,artists(name)))'
-    name = list()
+    name = []
     headers = {'Authorization': 'Bearer ' + accessToken}
     while True:
         r = requests.get(url, headers=headers) 
@@ -411,7 +411,7 @@ def playlistRepeatshref(playlisthref):
             continue
 
         for p in r.json()['items']:
-             artists = list()
+             artists = []
              for i in p['track']['artists']:
                  artists.append(i['name'])
 

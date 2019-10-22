@@ -14,7 +14,7 @@ def generateRandomString(length):
 
 #searches users.json and returns user object from string arg
 def getUserFromString(userString):
-    userids = list()
+    userids = []
     for i in userFile['users']:
         userids.append(i['id'])
 
