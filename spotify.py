@@ -20,7 +20,6 @@ def getUserFromString(userString):
 
     userid = process.extractOne(userString, userids, score_cutoff=80)
     if userid is None:
-        print('Unable to determine user you want')
         return
 
     for i in userFile['users']:

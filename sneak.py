@@ -5,12 +5,15 @@ import re
 
 def getUserPlaylists(userString):
     user = getUserFromString(userString)
-    if user is None:
-        return
+    userid = ''
+    if user is not None:
+       userid = user['id'] 
+    else:
+       userid = userString
 
-    accessToken = accessTokenForUser(user)
+    accessToken = accessTokenBot()
     playlists = []
-    url = 'https://api.spotify.com/v1/me/playlists?limit=50'
+    url = 'https://api.spotify.com/v1/users/' + userid + '/playlists?limit=50'
     headers = {'Authorization': 'Bearer ' + accessToken}
     while True:
         r = requests.get(url, headers=headers) 
@@ -28,12 +31,20 @@ def getUserPlaylists(userString):
 
     return playlists
 
-def getPlaylist(userString, playlistString):
+def getUser(userString):
     user = getUserFromString(userString)
-    playlist = getUserPlaylists(userString)
-    if user is None:
-        return
+    userid = ''
+    if user is not None:
+       userid = user['id'] 
+    else:
+       userid = userString
 
+    url = 'https://api.spotify.com/v1/users/' + userid
+    headers = {'Authorization': 'Bearer ' + accessTokenBot()}
+    r = requests.get(url, headers=headers)
+    return r.json()
+
+def getPlaylist(userString, playlistString):
     playlists = getUserPlaylists(userString)
     playlistnames = []
     for i in playlists:
@@ -142,12 +153,9 @@ def getSongsPlaylist(s, accessToken):
         json.dump(filtered, f, indent=4, separators=(', ', ': '))
 
 def topArtistsInPlaylists(userString, grouped=False):
-    user = getUserFromString(userString)
-    if user is None:
-        return
-
+    user = getUser(userString)
     playlists = getUserPlaylists(userString)
-    accessToken = accessTokenForUser(user)
+    accessToken = accessTokenBot()
     artists = []
     threads = []
     for i in playlists:
@@ -174,9 +182,8 @@ def topArtistsInPlaylists(userString, grouped=False):
     return sortedCount
 
 def topArtistsInPlaylist(userString, playlistString, grouped=False):
-    user = getUserFromString(userString)
     playlist = getPlaylist(userString, playlistString)
-    accessToken = accessTokenForUser(user)
+    accessToken = accessTokenBot()
     artists = []
     getArtistsInPlaylist(playlist, accessToken, artists, grouped)
     count = {i:artists.count(i) for i in artists} 
@@ -229,12 +236,12 @@ def topArtistsInPlaylisthref(playlisthref, grouped=False):
     return sortedCount
 
 def topSongsInPlaylists(userString):
-    user = getUserFromString(userString)
+    user = getUser(userString)
     if user is None:
         return
 
     playlists = getUserPlaylists(userString)
-    accessToken = accessTokenForUser(user)
+    accessToken = accessTokenBot()
     tracks = []
     name = {}
     threads = []
@@ -266,12 +273,8 @@ def topSongsInPlaylists(userString):
     return sortedCount
 
 def topSongsPlaylists(userString):
-    user = getUserFromString(userString)
-    if user is None:
-        return
-
     playlists = getUserPlaylists(userString)
-    accessToken = accessTokenForUser(user)
+    accessToken = accessTokenBot()
     threads = []
     for i in playlists:
         for s in i:
@@ -301,9 +304,8 @@ def topArtists(userString, term='long_term'):
     return artists
 
 def songPopularity(userString, playlistString):
-    user = getUserFromString(userString)
     playlist = getPlaylist(userString, playlistString)
-    accessToken = accessTokenForUser(user)
+    accessToken = accessTokenBot()
     popularity = []
     name = {}
     url = playlist['tracks']['href'] + '?fields=next,items(track(name,id,artists,popularity,album(name)))'
@@ -367,9 +369,8 @@ def songPopularityhref(playlisthref):
     return sortedCount
 
 def playlistRepeats(userString, playlistString):
-    user = getUserFromString(userString)
     playlist = getPlaylist(userString, playlistString)
-    accessToken = accessTokenForUser(user)
+    accessToken = accessTokenBot()
     name = []
     url = playlist['tracks']['href'] + '?fields=next,items(track(name,artists(name)))'
     headers = {'Authorization': 'Bearer ' + accessToken}
@@ -437,7 +438,3 @@ def findRepeats(L):
         else:
             seen_add(item)
     return list(seen2)
-
-def both(userString):
-    t = topSongsInPlaylists(userString)
-    b = topArtistsInPlaylists(userString)
