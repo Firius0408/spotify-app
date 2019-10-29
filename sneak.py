@@ -123,12 +123,12 @@ def getSongsPlaylist(s, accessToken):
 
     match = re.search(r'\d{1,2}/\d{1,2}/\d{4}', s['name'])
     if match is None:
-        print s['name']
+        print(s['name'])
         return
     
     date = datetime.datetime.strptime(match.group(), '%m/%d/%Y').date()
     filename = date.strftime('%Y-%m-%d')
-    print directory + '     ' + filename
+    print(directory + '     ' + filename)
     url = s['tracks']['href'] + '?fields=next,items(track(name))'
     name = []
     headers = {'Authorization': 'Bearer ' + accessToken}
@@ -172,10 +172,10 @@ def topArtistsInPlaylists(userString, grouped=False):
         thread.join()
     
     count = {i:artists.count(i) for i in artists}
-    if None in count.keys():
+    if None in list(count.keys()):
         del count[None]
 
-    sortedCount = sorted(count.items(), key=operator.itemgetter(1), reverse=True)
+    sortedCount = sorted(list(count.items()), key=operator.itemgetter(1), reverse=True)
     with open('./sortedArtistsCount.json', 'w') as f:
         json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
 
@@ -187,10 +187,10 @@ def topArtistsInPlaylist(userString, playlistString, grouped=False):
     artists = []
     getArtistsInPlaylist(playlist, accessToken, artists, grouped)
     count = {i:artists.count(i) for i in artists} 
-    if None in count.keys():
+    if None in list(count.keys()):
         del count[None]
         
-    sortedCount = sorted(count.items(), key=operator.itemgetter(1), reverse=True)
+    sortedCount = sorted(list(count.items()), key=operator.itemgetter(1), reverse=True)
     with open('./sortedArtistsCount.json', 'w') as f:
         json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
 
@@ -226,10 +226,10 @@ def topArtistsInPlaylisthref(playlisthref, grouped=False):
         url = r.json()['next'] + '?fields=next,items(track(artists))'
 
     count = {i:artists.count(i) for i in artists} 
-    if None in count.keys():
+    if None in list(count.keys()):
         del count[None]
         
-    sortedCount = sorted(count.items(), key=operator.itemgetter(1), reverse=True)
+    sortedCount = sorted(list(count.items()), key=operator.itemgetter(1), reverse=True)
     with open('./sortedArtistsCount.json', 'w') as f:
         json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
 
@@ -258,15 +258,15 @@ def topSongsInPlaylists(userString):
     for index, thread in enumerate(threads):
         thread.join()
     
-    if None in name.keys():
+    if None in list(name.keys()):
         del name[None]
 
     count = {i:tracks.count(i) for i in tracks} 
-    if None in count.keys():
+    if None in list(count.keys()):
         del count[None]
         
-    nameCount = {name[key] : value for key, value in count.items() }
-    sortedCount = sorted(nameCount.items(), key=operator.itemgetter(1), reverse=True)
+    nameCount = {name[key] : value for key, value in list(count.items()) }
+    sortedCount = sorted(list(nameCount.items()), key=operator.itemgetter(1), reverse=True)
     with open('./sortedCount.json', 'w') as f:
         json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
 
@@ -330,7 +330,7 @@ def songPopularity(userString, playlistString):
 
         url = r.json()['next'] + '?fields=next,items(track(name,id,artists,album(name)))'
 
-    sortedCount = sorted(name.items(), key=operator.itemgetter(1), reverse=True)
+    sortedCount = sorted(list(name.items()), key=operator.itemgetter(1), reverse=True)
     with open('./songPopularity.json', 'w') as f:
         json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
     
@@ -362,7 +362,7 @@ def songPopularityhref(playlisthref):
 
         url = r.json()['next'] + '?fields=next,items(track(name,id,artists,album(name)))'
 
-    sortedCount = sorted(name.items(), key=operator.itemgetter(1), reverse=True)
+    sortedCount = sorted(list(name.items()), key=operator.itemgetter(1), reverse=True)
     with open('./songPopularity.json', 'w') as f:
         json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
     

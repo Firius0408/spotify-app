@@ -3,7 +3,7 @@ from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 import random
 import string
-from urlparse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs
 
 redirect_uri = 'http://localhost:8081/callback' # not used, needed to satisfy spotify auth
 
@@ -48,22 +48,23 @@ def authUser():
     state = generateRandomString(16)
     scope = 'playlist-modify-public playlist-modify-private user-top-read'
     url = 'https://accounts.spotify.com/authorize?client_id=' + client_id + '&response_type=code&redirect_uri=' + redirect_uri + '&scope=' + scope + '&state=' + state
-    print 'Go to the following url and paste your url after you login'
-    redirect = raw_input(url + " ") # janky way of authorizing user. Go to url and parse the returned url for code
+    print('Go to the following url and paste your url after you login')
+    redirect = eval(input(url + " ")) # janky way of authorizing user. Go to url and parse the returned url for code
     queries = parse_qs(urlparse(redirect).query)
     if ('state' not in queries or queries['state'][0] != state):
-        print 'Error: state mismatch. Aborting...'
+        print('Error: state mismatch. Aborting...')
         return
 
     code = queries['code'][0]
     url = 'https://accounts.spotify.com/api/token'
-    headers = { 'Authorization': 'Basic ' + base64.b64encode(client_id + ':' + client_secret) }
     payload = {
             'code': code,
             'redirect_uri': redirect_uri,
-            'grant_type': 'authorization_code'
+            'grant_type': 'authorization_code',
+            'client_id': client_id,
+            'client_secret': client_secret
             }
-    r = requests.post(url, headers=headers, data=payload)
+    r = requests.post(url, data=payload)
     if (r.status_code == 200):
         accessToken = r.json()['access_token']
         refreshToken = r.json()['refresh_token']
@@ -72,20 +73,20 @@ def authUser():
     headers = { 'Authorization': 'Bearer ' + accessToken }
     r = requests.get(url, headers=headers)
     userid = r.json()['id']
-    print userid
-    print refreshToken
-    print r.json()['display_name']
+    print(userid)
+    print(refreshToken)
+    print(r.json()['display_name'])
     users = userFile['users']
     flag = False
     for i in users:
         if (userid == i['id']):
-            print 'user found'
+            print('user found')
             i['refresh_token'] = refreshToken
             flag = True
             break
 
     if not flag:
-        print 'new user found'
+        print('new user found')
         botToken = accessTokenBot()
         playlisthreflong = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of All-Time for " + userid, 'public': 'true' }))
         playlisthrefmid = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of 6 Months for " + userid, 'public': 'true' }))
@@ -132,7 +133,7 @@ if __name__ == '__main__':
     if (len(sys.argv) > 1):
         if (sys.argv[1] == 'list'):
             for i in userFile['users']:
-                print i['id']
+                print(i['id'])
         elif (sys.argv[1] == 'newUser'):
             newUser()
         else:
