@@ -70,14 +70,15 @@ def updatePlaylist(accessTokenUser, accessTokenPlaylist, term, playlisthref):
     headers = {'Authorization': 'Bearer ' + accessTokenUser }
     r = requests.get(url, headers=headers)
     uri = []
-    for i in r.json()['items']:
-        uri.append(i['uri'])
-
     url = playlisthref + '/tracks/'
     headers = { 
             'Authorization': 'Bearer ' + accessTokenPlaylist,
             'Content-Type': 'application/json'
             }
+    throwout = requests.put(url, headers=headers, data=json.dumps({'uris': uri}))
+    for i in r.json()['items']:
+        uri.append(i['uri'])
+
     r = requests.put(url, headers=headers, data=json.dumps({'uris': uri}))
 
 # updates all continuously updated playlists for all users in users.json
