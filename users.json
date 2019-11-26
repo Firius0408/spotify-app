@@ -104,6 +104,13 @@
             "id": "arvinalmessi10",
             "refresh_token": "AQBi9CP0NsQpPvsaRQl169lobZVf8vBPOMZUP2jM_CXQzhC5mjH6l86CLGmCnvoc24juXwfTO1oFRRavuvjYbe9C7-ul6067gyhsRCWar-p0-sIajj-lddE8PcNBYvqPDz99CQ",
             "playlisthreflong": "https://api.spotify.com/v1/playlists/6BmMlbGsvVst7hW855uBl3"
+        },
+        {
+            "playlisthrefshort": "https://api.spotify.com/v1/playlists/4Utulc9eJRaCqYzP5zwfwy",
+            "playlisthrefmid": "https://api.spotify.com/v1/playlists/3yaejVTFynswNXjMO7QymY",
+            "id": "cpusi73ff0bfg0qmcb4695m2v",
+            "refresh_token": "AQCouZrS1LW8M2ixoBogR0mdyXCLueNpHKy9s6fthOSVHHYSwhfR0cJkqJj1MizTxrJ6vAypvSWiOfwpEC3dMYvm14lz0KOUUoZo4gkHo7sJl-MF0FvAxUNP1S_JgZkRULg",
+            "playlisthreflong": "https://api.spotify.com/v1/playlists/7hHMXrOeei7R9CHT0iKC7k"
         }
     ]
 }
