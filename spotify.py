@@ -49,7 +49,7 @@ def authUser():
     scope = 'playlist-modify-public playlist-modify-private user-top-read'
     url = 'https://accounts.spotify.com/authorize?client_id=' + client_id + '&response_type=code&redirect_uri=' + redirect_uri + '&scope=' + scope + '&state=' + state
     print('Go to the following url and paste your url after you login')
-    redirect = eval(input(url + " ")) # janky way of authorizing user. Go to url and parse the returned url for code
+    redirect = input(url + " ") # janky way of authorizing user. Go to url and parse the returned url for code
     queries = parse_qs(urlparse(redirect).query)
     if ('state' not in queries or queries['state'][0] != state):
         print('Error: state mismatch. Aborting...')
