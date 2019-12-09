@@ -96,12 +96,34 @@ def update():
     for index, thread in enumerate(threads):
         thread.join()
 
+def last100RandomPool():
+    accessToken = accessTokenForUser(userFile['users'][0])
+    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks?fields=total'
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    r = requests.get(url, headers=headers)
+    total = r.json()['total']
+    offset = total - 100
+    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks?fields=items(track(uri))&offset=' + str(offset)
+    r = requests.get(url, headers=headers)
+    url = 'https://api.spotify.com/v1/playlists/1iAyKjAS15OOlFBFtnWX1n/tracks'
+    headers = { 
+            'Authorization': 'Bearer ' + accessToken,
+            'Content-Type': 'application/json'
+            }
+    uri = []
+    #throwout = requests.put(url, headers=headers, data=json.dumps({'uris': uri}))
+    for i in r.json()['items']:
+        uri.append(i['track']['uri'])
+
+    r = requests.put(url, headers=headers, data=json.dumps({'uris': uri}))
+
 date = datetime.datetime.today()
 if __name__ == '__main__':
     with open(sys.path[0] + '/users.json') as json_file:
         userFile = json.load(json_file)
 
     update()
+    last100RandomPool()
 else:
     with open('./users.json') as json_file:
         userFile = json.load(json_file)
