@@ -75,7 +75,7 @@ def updatePlaylist(accessTokenUser, accessTokenPlaylist, term, playlisthref):
             'Authorization': 'Bearer ' + accessTokenPlaylist,
             'Content-Type': 'application/json'
             }
-    throwout = requests.put(url, headers=headers, data=json.dumps({'uris': uri}))
+    #throwout = requests.put(url, headers=headers, data=json.dumps({'uris': uri}))
     for i in r.json()['items']:
         uri.append(i['uri'])
 
