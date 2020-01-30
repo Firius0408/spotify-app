@@ -73,9 +73,10 @@ def authUser():
     headers = { 'Authorization': 'Bearer ' + accessToken }
     r = requests.get(url, headers=headers)
     userid = r.json()['id']
-    print(userid)
-    print(refreshToken)
-    print(r.json()['display_name'])
+    name = userid
+    if r.json()['display_name'] is not None:
+        name = r.json()['display_name']
+
     users = userFile['users']
     flag = False
     for i in users:
@@ -88,9 +89,9 @@ def authUser():
     if not flag:
         print('new user found')
         botToken = accessTokenBot()
-        playlisthreflong = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of All-Time for " + userid, 'public': 'true' }))
-        playlisthrefmid = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of 6 Months for " + userid, 'public': 'true' }))
-        playlisthrefshort = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of 4 Weeks for " + userid, 'public': 'true' }))
+        playlisthreflong = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of All-Time for " + name, 'public': 'true' }))
+        playlisthrefmid = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of 6 Months for " + name, 'public': 'true' }))
+        playlisthrefshort = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of 4 Weeks for " + name, 'public': 'true' }))
         user = {'id': userid,
             'refresh_token': refreshToken,
             'playlisthreflong': playlisthreflong,
@@ -134,8 +135,8 @@ if __name__ == '__main__':
         if (sys.argv[1] == 'list'):
             for i in userFile['users']:
                 print(i['id'])
-        elif (sys.argv[1] == 'newUser'):
-            newUser()
+        elif (sys.argv[1] == 'authUser'):
+            authUser()
         else:
             playlist(sys.argv[1])
     else:
