@@ -13,12 +13,13 @@ useridme = 'ohjber0jdol59842ilmd8w0a2'
 # returns a valid access token for the bot
 def accessTokenBot():
     url = 'https://accounts.spotify.com/api/token'
-    headers = { 'Authorization': 'Basic ' + base64.b64encode(client_id + ':' + client_secret) }
     payload = {
             'grant_type': 'refresh_token',
-            'refresh_token': refreshtokenme
+            'refresh_token': refreshtokenme,
+            'client_id': client_id,
+            'client_secret': client_secret
             }
-    r = requests.post(url, headers=headers, data=payload)
+    r = requests.post(url, data=payload)
     if (r.status_code == 200):
         return r.json()['access_token']
 
@@ -26,12 +27,13 @@ def accessTokenBot():
 def accessTokenForUser(user):
     refresh_token = user['refresh_token']
     url = 'https://accounts.spotify.com/api/token'
-    headers = { 'Authorization': 'Basic ' + base64.b64encode(client_id + ':' + client_secret) }
     payload = {
             'grant_type': 'refresh_token',
-            'refresh_token': refresh_token
+            'refresh_token': refresh_token,
+            'client_id': client_id,
+            'client_secret': client_secret
             }
-    r = requests.post(url, headers=headers, data=payload)
+    r = requests.post(url, data=payload)
     if (r.status_code == 200):
         return r.json()['access_token']
 
@@ -42,7 +44,7 @@ def updateIndividual(user, botToken):
     playlisthrefshort = user['playlisthrefshort']
     accessTokenUser = accessTokenForUser(user)
     if accessTokenUser is None:
-        print 'app not authorized for user ' + user['id']
+        print('app not authorized for user ' + user['id'])
         return
 
     x = threading.Thread(target=updatePlaylist, args=(accessTokenUser, botToken, 'long_term', playlisthreflong,))
