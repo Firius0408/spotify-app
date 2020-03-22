@@ -649,7 +649,7 @@ def findSongInPlaylists(userString, songId):
     threads = []
     for i in playlists:
         for s in i:
-            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id'] or s['name'] in ignore:
+            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
                 continue
 
             x = threading.Thread(target=findSongInPlayliststhread, args=(s, accessToken, playlist, songId))
