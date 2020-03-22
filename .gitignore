@@ -1,4 +1,5 @@
 *.vim
 *.pyc
+Pipfile.lock
 /topsongs/**
 !/topsongs/diff.py
