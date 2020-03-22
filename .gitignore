@@ -1,5 +1,6 @@
 *.vim
 *.pyc
 Pipfile.lock
+*log
 /topsongs/**
 !/topsongs/diff.py
