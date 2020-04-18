@@ -718,3 +718,14 @@ def findArtistInPlaylists(userString, artistId):
         json.dump(playlist, f, indent=4, separators=(', ', ': '))
 
     return playlist
+
+def search(string, kind):
+    string = string.replace(' ', '%20')
+    url = 'https://api.spotify.com/v1/search?q=' + string + '&type=' + kind
+    headers = {'Authorization': 'Bearer ' + accessTokenBot()}
+    r = requests.get(url, headers=headers)
+    results = [] 
+    for i in r.json()[kind + 's']['items']:
+        results.append((i['name'], i['id']))
+
+    return results
