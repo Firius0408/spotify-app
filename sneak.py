@@ -664,3 +664,57 @@ def findSongInPlaylists(userString, songId):
         json.dump(playlist, f, indent=4, separators=(', ', ': '))
 
     return playlist
+
+def findArtistInPlayliststhread(s, accessToken, playlist, artistId):
+    url = s['tracks']['href'] + '?fields=next,items(track(artists))'
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    while True:
+        r = requests.get(url, headers=headers) 
+        if r.status_code != 200:
+            if r.status_code == 429:
+                time.sleep(float(r.headers['Retry-After']))
+
+            continue
+
+        for p in r.json()['items']:
+            if p is None:
+                continue
+
+            for j in p['track']['artists']:
+                if artistId == j['id']:
+                    playlist.append(s['name'])
+                    break
+
+        if r.json()['next'] is None:
+            break
+
+        url = r.json()['next'] + '?fields=next,items(track(artists))'
+
+def findArtistInPlaylists(userString, artistId):
+    user = getUser(userString)
+    if user is None:
+        return
+
+    playlists = getUserPlaylists(userString)
+    accessToken = accessTokenBot()
+    playlist = []
+    threads = []
+    for i in playlists:
+        for s in i:
+            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
+                continue
+
+            x = threading.Thread(target=findArtistInPlayliststhread, args=(s, accessToken, playlist, artistId))
+            threads.append(x)
+            x.start()
+
+
+    for index, thread in enumerate(threads):
+        thread.join()
+
+    playlist = list(set(playlist))
+
+    with open('./artistInPlaylists.json', 'w') as f:
+        json.dump(playlist, f, indent=4, separators=(', ', ': '))
+
+    return playlist
