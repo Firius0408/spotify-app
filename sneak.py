@@ -627,7 +627,7 @@ def findSongInPlayliststhread(s, accessToken, playlist, songId):
             continue
 
         for p in r.json()['items']:
-            if p is None:
+            if p is None or p['track'] is None:
                 continue
 
             if songId == p['track']['id']:
@@ -677,7 +677,7 @@ def findArtistInPlayliststhread(s, accessToken, playlist, artistId):
             continue
 
         for p in r.json()['items']:
-            if p is None:
+            if p is None or p['track'] is None:
                 continue
 
             for j in p['track']['artists']:
