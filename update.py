@@ -103,7 +103,7 @@ def last100RandomPool():
     r = requests.get(url, headers=headers)
     total = r.json()['total']
     offset = total - 100
-    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks?fields=items(track(uri))&offset=' + str(offset)
+    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks?fields=items(track(uri),is_local)&offset=' + str(offset)
     r = requests.get(url, headers=headers)
     url = 'https://api.spotify.com/v1/playlists/1iAyKjAS15OOlFBFtnWX1n/tracks'
     headers = { 
@@ -113,7 +113,8 @@ def last100RandomPool():
     uri = []
     #throwout = requests.put(url, headers=headers, data=json.dumps({'uris': uri}))
     for i in r.json()['items']:
-        uri.append(i['track']['uri'])
+        if i['is_local'] is False:
+            uri.append(i['track']['uri'])
 
     r = requests.put(url, headers=headers, data=json.dumps({'uris': uri}))
 
