@@ -729,3 +729,93 @@ def search(string, kind):
         results.append((i['name'], i['id']))
 
     return results
+
+def convertThread(newuris, rpos, name, artists, uri):
+    for i in rpos:
+        if name != i[1]:
+            continue
+
+        flag = True
+        for p in artists:
+            if p not in i[2]:
+                flag = False
+                break
+
+        if flag:
+            newuris.append(i[0])
+            return
+
+    print(name)
+    newwuris.append(uri)
+
+def convert(playlistString):
+    playlist = getPlaylist('firiusbob', playlistString)
+    user = getUserFromString('firiusbob')
+    accessToken = accessTokenForUser(user)
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks?fields=next,items(track(artists(name),uri,name))'
+    rpos = []
+    print('Pulling from RPOS')
+    while True:
+        r = requests.get(url, headers=headers) 
+        if r.status_code != 200:
+            if r.status_code == 429:
+                time.sleep(float(r.headers['Retry-After']))
+    
+            continue
+    
+        for p in r.json()['items']:
+            if p is None or p['track'] is None:
+                continue
+    
+            artists = []
+            for i in p['track']['artists']:
+                artists.append(i['name'])
+    
+            rpos.append([p['track']['uri'], p['track']['name'], artists])
+    
+        if r.json()['next'] is None:
+            break
+    
+        url = r.json()['next'] + '?fields=next,items(track(uri,artists(name),name))'
+    
+    print('Finished pulling from RPOS. Beginning search')
+    url = playlist['tracks']['href'] + '?fields=next,items(track(artists(name),name,uri))'
+    newuris = []
+    threads = []
+    while True:
+        r = requests.get(url, headers=headers) 
+        if r.status_code != 200:
+            if r.status_code == 429:
+                time.sleep(float(r.headers['Retry-After']))
+    
+            continue
+    
+        for p in r.json()['items']:
+            if p is None or p['track'] is None:
+                continue
+    
+            name = p['track']['name']
+            artists = []
+            for i in p['track']['artists']:
+                artists.append(i['name'])
+    
+            x = threading.Thread(target=convertThread, args=(newuris, rpos, name, artists, uri))
+            threads.append(x)
+            x.start()
+    
+        if r.json()['next'] is None:
+            break
+    
+        url = r.json()['next'] + '?fields=next,items(track(artists(name),name))'
+    
+    for index, thread in enumerate(threads):
+        thread.join()
+    
+    print('Finished search. Creating playlist')
+    payload = json.dumps({'name': 'Convert of ' + playlist['name']})
+    url = createPlaylist(user['id'], accessToken, payload) + '/tracks'
+    print('Finished. Adding to playlist')
+    headers = {'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json'}
+    for i in range(0, len(newuris), 100):
+        r = requests.post(url, headers=headers, data=json.dumps({'uris': newuris[i:i + 100]}))
