@@ -746,7 +746,7 @@ def convertThread(newuris, rpos, name, artists, uri):
             return
 
     print(name)
-    newwuris.append(uri)
+    newuris.append(uri)
 
 def convert(playlistString):
     playlist = getPlaylist('firiusbob', playlistString)
@@ -797,6 +797,7 @@ def convert(playlistString):
     
             name = p['track']['name']
             artists = []
+            uri = p['track']['uri']
             for i in p['track']['artists']:
                 artists.append(i['name'])
     
