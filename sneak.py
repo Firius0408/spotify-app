@@ -764,7 +764,7 @@ def searchRPOS(song):
         if r.json()['next'] is None:
             break
     
-        url = r.json()['next'] + '?fields=next,items(track(uri,artists(name),name))'
+        url = r.json()['next'] + '?fields=next,items(track(id,artists(name),name))'
     
     return results
 
