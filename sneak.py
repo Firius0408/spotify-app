@@ -730,6 +730,44 @@ def search(string, kind):
 
     return results
 
+def searchRPOS(song):
+    song = song.lower()
+    song = song.translate({ord(i): None for i in '-&()'})
+    song = song.split('feat.', 1)[0]
+    user = getUserFromString('firiusbob')
+    accessToken = accessTokenForUser(user)
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks?fields=next,items(track(artists(name),id,name))'
+    results = []
+    print('Searching RPOS...')
+    while True:
+        r = requests.get(url, headers=headers) 
+        if r.status_code != 200:
+            if r.status_code == 429:
+                time.sleep(float(r.headers['Retry-After']))
+    
+            continue
+    
+        for p in r.json()['items']:
+            if p is None or p['track'] is None:
+                continue
+
+            test = p['track']['name'].lower()
+            test = test.translate({ord(i): None for i in '-&()'})
+            test = test.split('feat.', 1)[0]
+            if fuzz.partial_ratio(song, test) > 98 and fuzz.ratio(song, test) > 45:
+                diff = len(test) - len(song)
+                if diff < 100 and diff >= 0:
+                    artists = [j['name'] for j in p['track']['artists']]
+                    results.append((p['track']['name'], artists, p['track']['id']))
+    
+        if r.json()['next'] is None:
+            break
+    
+        url = r.json()['next'] + '?fields=next,items(track(uri,artists(name),name))'
+    
+    return results
+
 def convertThread(newuris, rpos, name, artists, uri):
     for i in rpos:
         if name != i[1]:
