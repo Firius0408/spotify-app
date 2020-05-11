@@ -768,6 +768,68 @@ def searchRPOS(song):
     
     return results
 
+def searchPlayliststhread(s, accessToken, songhrefs, song):
+    url = s['tracks']['href'] + '?fields=next,items(track(name,href))'
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    while True:
+        r = requests.get(url, headers=headers) 
+        if r.status_code != 200:
+            if r.status_code == 429:
+                time.sleep(float(r.headers['Retry-After']))
+
+            continue
+
+        for p in r.json()['items']:
+            if p is None or p['track'] is None or p['track']['href'] in songhrefs:
+                continue
+
+            test = p['track']['name'].lower()
+            test = test.translate({ord(i): None for i in '-&()'})
+            test = test.split('feat.', 1)[0]
+            if fuzz.partial_ratio(song, test) > 98 and fuzz.ratio(song, test) > 45:
+                diff = len(test) - len(song)
+                if diff < 100 and diff >= 0:
+                    songhrefs.append(p['track']['href'])
+
+        if r.json()['next'] is None:
+            break
+
+        url = r.json()['next'] + '?fields=next,items(track(name,href))'
+
+def searchPlaylists(userString, song):
+    song = song.lower()
+    song = song.translate({ord(i): None for i in '-&()'})
+    song = song.split('feat.', 1)[0]
+    user = getUser(userString)
+    if user is None:
+        return
+
+    playlists = getUserPlaylists(userString)
+    accessToken = accessTokenBot()
+    songhrefs = []
+    threads = []
+    for i in playlists:
+        for s in i:
+            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
+                continue
+
+            x = threading.Thread(target=searchPlayliststhread, args=(s, accessToken, songhrefs, song))
+            threads.append(x)
+            x.start()
+
+
+    for index, thread in enumerate(threads):
+        thread.join()
+
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    songs = []
+    for i in songhrefs:
+        r = requests.get(i, headers=headers)
+        artists = [i['name'] for i in r.json()['artists']]
+        songs.append((r.json()['name'], artists, r.json()['id']))
+
+    return songs
+
 def convertThread(newuris, rpos, name, artists, uri):
     for i in rpos:
         if name != i[1]:
