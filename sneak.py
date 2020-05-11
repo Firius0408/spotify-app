@@ -64,9 +64,10 @@ def getPlaylist(userString, playlistString):
             if s['name'] == playlist[0]:
                 return s
 
-def getArtistsInPlaylist(s, accessToken, artists, grouped):
+def getArtistsInPlaylist(s, accessToken, artists, grouped, count):
     url = s['tracks']['href'] + '?fields=next,items(track(artists))'
     headers = {'Authorization': 'Bearer ' + accessToken}
+    temp = []
     while True:
         r = requests.get(url, headers=headers) 
         if r.status_code != 200:
@@ -87,9 +88,12 @@ def getArtistsInPlaylist(s, accessToken, artists, grouped):
                 artists.append(', '.join(trackartists))
             else:
                 for i in p['track']['artists']:
-                    artists.append(i['name'])
+                    name = i['name']
+                    if count or name not in temp:
+                        temp.append(name)
 
         if r.json()['next'] is None:
+            artists.extend(temp)
             break
 
         url = r.json()['next'] + '?fields=next,items(track(artists))'
@@ -632,6 +636,7 @@ def findSongInPlayliststhread(s, accessToken, playlist, songId):
 
             if songId == p['track']['id']:
                 playlist.append(s['name'])
+                return
 
         if r.json()['next'] is None:
             break
@@ -683,7 +688,7 @@ def findArtistInPlayliststhread(s, accessToken, playlist, artistId):
             for j in p['track']['artists']:
                 if artistId == j['id']:
                     playlist.append(s['name'])
-                    break
+                    return
 
         if r.json()['next'] is None:
             break
@@ -711,8 +716,6 @@ def findArtistInPlaylists(userString, artistId):
 
     for index, thread in enumerate(threads):
         thread.join()
-
-    playlist = list(set(playlist))
 
     with open('./artistInPlaylists.json', 'w') as f:
         json.dump(playlist, f, indent=4, separators=(', ', ': '))
