@@ -730,11 +730,7 @@ def search(string, kind):
     url = 'https://api.spotify.com/v1/search?q=' + string + '&type=' + kind
     headers = {'Authorization': 'Bearer ' + accessTokenBot()}
     r = requests.get(url, headers=headers)
-    results = [] 
-    for i in r.json()[kind + 's']['items']:
-        results.append((i['name'], i['id']))
-
-    return results
+    return [(i['name'], i['id']) for i in r.json()[kind + 's']['items']] 
 
 def searchRPOS(song):
     song = song.lower()
