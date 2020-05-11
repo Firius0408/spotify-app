@@ -189,7 +189,7 @@ def getSongsPlaylist(s, accessToken):
     with open('./topsongs/' + directory + '/' + filename + '.json', 'w') as f:
         json.dump(filtered, f, indent=4, separators=(', ', ': '))
 
-def topArtistsInPlaylists(userString, grouped=False):
+def topArtistsInPlaylists(userString, count=False, grouped=False):
     user = getUser(userString)
     playlists = getUserPlaylists(userString)
     accessToken = accessTokenBot()
@@ -197,10 +197,13 @@ def topArtistsInPlaylists(userString, grouped=False):
     threads = []
     for i in playlists:
         for s in i:
-            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id'] or s['name'] in ignore:
+            if count and s['name'] in ignore:
                 continue
 
-            x = threading.Thread(target=getArtistsInPlaylist, args=(s, accessToken, artists, grouped))
+            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
+                continue
+
+            x = threading.Thread(target=getArtistsInPlaylist, args=(s, accessToken, artists, grouped, count))
             threads.append(x)
             x.start()
 
@@ -222,7 +225,7 @@ def topArtistsInPlaylist(userString, playlistString, grouped=False):
     playlist = getPlaylist(userString, playlistString)
     accessToken = accessTokenBot()
     artists = []
-    getArtistsInPlaylist(playlist, accessToken, artists, grouped)
+    getArtistsInPlaylist(playlist, accessToken, artists, grouped, True)
     count = {i:artists.count(i) for i in artists} 
     if None in list(count.keys()):
         del count[None]
