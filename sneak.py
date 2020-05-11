@@ -3,7 +3,7 @@ import operator
 import time
 import re
 
-ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'L?', 'IYLHLHG', 'Wd', 'Hh', 'Nc', 'Defined', 'Musical', 'Disney', 'Indie', 'Classical', 'Monstercat', 'Rap', 'House', 'U+1F494', 'The Beatles', 'Ashley', 'Jonathan', 'Daniel', 'Phillip', 'Shan']
+ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'L?', 'IYLHLHG', 'Musical', 'Disney', 'Indie', 'Classical', 'Monstercat', 'Rap', 'House', 'The Beatles', 'Ashley', 'Jonathan', 'Daniel', 'Phillip', 'Shan']
 #ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'The Beatles']
 
 def getUserPlaylists(userString):
@@ -211,12 +211,18 @@ def topArtistsInPlaylists(userString, count=False, grouped=False):
     for index, thread in enumerate(threads):
         thread.join()
 
-    count = {i:artists.count(i) for i in artists}
-    if None in list(count.keys()):
-        del count[None]
+    counted = {i:artists.count(i) for i in artists}
+    if None in list(counted.keys()):
+        del counted[None]
 
-    sortedCount = sorted(list(count.items()), key=operator.itemgetter(1), reverse=True)
-    with open('./sortedArtistsCount.json', 'w') as f:
+    sortedCount = sorted(list(counted.items()), key=operator.itemgetter(1), reverse=True)
+    t = './sortedArtists'
+    if count:
+        t += 'Count.json'
+    else:
+        t += '.json'
+        
+    with open(t, 'w') as f:
         json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
 
     return sortedCount
