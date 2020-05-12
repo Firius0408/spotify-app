@@ -887,7 +887,7 @@ def convert(playlistString):
     
         url = r.json()['next'] + '?fields=next,items(track(uri,artists(name),name))'
     
-    print('Finished pulling from RPOS. Beginning search')
+    print('Finished pulling from RPOS. Searching...')
     url = playlist['tracks']['href'] + '?fields=next,items(track(artists(name),name,uri))'
     newuris = []
     threads = []
@@ -928,3 +928,57 @@ def convert(playlistString):
     headers = {'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json'}
     for i in range(0, len(newuris), 100):
         r = requests.post(url, headers=headers, data=json.dumps({'uris': newuris[i:i + 100]}))
+
+def notinRPOS(playlistString):
+    playlist = getPlaylist('firiusbob', playlistString)
+    user = getUserFromString('firiusbob')
+    accessToken = accessTokenForUser(user)
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks?fields=next,items(track(id))'
+    rpos = []
+    print('Pulling from RPOS')
+    while True:
+        r = requests.get(url, headers=headers) 
+        if r.status_code != 200:
+            if r.status_code == 429:
+                time.sleep(float(r.headers['Retry-After']))
+    
+            continue
+    
+        for p in r.json()['items']:
+            if p is None or p['track'] is None or p['track']['id'] is None:
+                continue
+    
+            rpos.append(p['track']['id'])
+    
+        if r.json()['next'] is None:
+            break
+    
+        url = r.json()['next'] + '?fields=next,items(track(id))'
+    
+    print('Finished pulling from RPOS. Comparing...')
+    url  = playlist['tracks']['href'] + '?fields=next,items(track(artists(name),name,id))'
+    results = []
+    while True:
+        r = requests.get(url, headers=headers) 
+        if r.status_code != 200:
+            if r.status_code == 429:
+                time.sleep(float(r.headers['Retry-After']))
+    
+            continue
+    
+        for p in r.json()['items']:
+            if p is None or p['track'] is None:
+                continue
+
+            if p['track']['id'] not in rpos:
+                artists = [i['name'] for i in p['track']['artists']]
+                results.append((p['track']['name'], artists, p['track']['id']))
+    
+    
+        if r.json()['next'] is None:
+            break
+    
+        url = r.json()['next'] + '?fields=next,items(track(artists(name),name))'
+
+    return results
