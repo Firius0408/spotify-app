@@ -81,11 +81,9 @@ def getArtistsInPlaylist(s, accessToken, artists, grouped, count):
                 continue
 
             if grouped:
-                trackartists = []
-                for i in p['track']['artists']:
-                    trackartists.append(i['name'])
-
-                artists.append(', '.join(trackartists))
+                trackartists = [i['name'] for i in p['track']['artists']]
+                if count or trackartists not in temp:
+                    temp.append(', '.join(trackartists))
             else:
                 for i in p['track']['artists']:
                     name = i['name']
