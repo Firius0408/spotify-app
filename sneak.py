@@ -2,6 +2,7 @@ from spotify import *
 import operator
 import time
 import re
+import emoji
 
 ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'L?', 'IYLHLHG', 'Musical', 'Disney', 'Indie', 'Classical', 'Monstercat', 'Rap', 'House', 'The Beatles', 'Ashley', 'Jonathan', 'Daniel', 'Phillip', 'Shan']
 #ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'The Beatles']
@@ -54,14 +55,17 @@ def getPlaylist(userString, playlistString):
         for s in i:
             playlistnames.append(s['name'])
 
-    playlist = process.extractOne(playlistString, playlistnames, score_cutoff=80)
+    namesdemoji = [emoji.demojize(i) for i in playlistnames]
+    playlistString = emoji.demojize(playlistString)
+    playlist = process.extractOne(playlistString, namesdemoji, score_cutoff=80)
+    playlistName = emoji.emojize(playlist[0])
     if playlist is None:
         print ('Unable to determine playlist')
         return
 
     for i in playlists:
         for s in i:
-            if s['name'] == playlist[0]:
+            if s['name'] == playlistName:
                 return s
 
 def getArtistsInPlaylist(s, accessToken, artists, grouped, count):
