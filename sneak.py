@@ -984,3 +984,43 @@ def notinRPOS(playlistString):
         url = r.json()['next'] + '?fields=next,items(track(artists(name),name))'
 
     return results
+
+def playlistFollowersThread(nameids, followers, accessToken):
+    url = 'https://api.spotify.com/v1/playlists/' + nameids[1] + '?fields=followers(total)'
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    while True:
+        r = requests.get(url, headers=headers) 
+        if r.status_code == 200:
+            followers.append((nameids[0], r.json()['followers']['total']))
+            return
+
+        elif r.status_code == 429:
+            time.sleep(float(r.headers['Retry-After']))
+
+def playlistFollowers(userString):
+    playlists = getUserPlaylists(userString)
+    user = getUser(userString)
+    nameids = []
+    for i in playlists:
+        for s in i:
+            nameids.append((s['name'], s['id'], s['owner']['id']))
+
+    accessToken = accessTokenBot()
+    followers = []
+    threads = []
+    for i in nameids:
+        if i[0] in ignore or "Top Songs of " in i[0] or user['id'] != i[2]:
+            continue
+
+        x = threading.Thread(target=playlistFollowersThread, args=(i, followers, accessToken))
+        threads.append(x)
+        x.start()
+
+    for index, thread in enumerate(threads):
+        thread.join()
+
+    sortedCount = sorted(followers, key=operator.itemgetter(1), reverse=True)
+    with open('sortedPlaylistFollowers.json', 'w') as f:
+        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
+
+    return sortedCount
