@@ -137,7 +137,7 @@ def getSongsInPlaylist(s, accessToken, tracks, name):
             continue
 
         for p in r.json()['items']:
-            if p is None:
+            if p is None or p['track'] is None:
                 continue
 
             tracks.append(p['track']['id'])
