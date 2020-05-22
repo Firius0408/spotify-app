@@ -311,10 +311,10 @@ def topGenresInPlaylists(userString):
 
     genres = []
     headers = {'Authorization': 'Bearer ' + accessToken}
-    for i in artists:
+    for i in range(0, len(artists), 50):
         r = ''
         while True:
-            url = 'https://api.spotify.com/v1/artists/' + i
+            url = 'https://api.spotify.com/v1/artists/?ids=' + ','.join(artists[i:i + 50])
             r = requests.get(url, headers=headers)
             if r.status_code != 200:
                 if r.status_code == 429:
@@ -323,8 +323,9 @@ def topGenresInPlaylists(userString):
             else:
                 break
 
-        for j in r.json()['genres']:
-            genres.append(j)
+        for j in r.json()['artists']:
+            for k in j['genres']:
+                genres.append(k)
 
     count = {i:genres.count(i) for i in genres}
     if None in list(count.keys()):
@@ -343,10 +344,10 @@ def topGenresInPlaylist(userString, playlistString):
     getGenresInPlaylist(playlist, accessToken, artists)
     genres = []
     headers = {'Authorization': 'Bearer ' + accessToken}
-    for i in artists:
+    for i in range(0, len(artists), 50):
         r = ''
         while True:
-            url = 'https://api.spotify.com/v1/artists/' + i
+            url = 'https://api.spotify.com/v1/artists/?ids=' + ','.join(artists[i:i + 50])
             r = requests.get(url, headers=headers)
             if r.status_code != 200:
                 if r.status_code == 429:
@@ -355,8 +356,9 @@ def topGenresInPlaylist(userString, playlistString):
             else:
                 break
 
-        for j in r.json()['genres']:
-            genres.append(j)
+        for j in r.json()['artists']:
+            for k in j['genres']:
+                genres.append(k)
 
     count = {i:genres.count(i) for i in genres}
     if None in list(count.keys()):
