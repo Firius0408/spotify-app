@@ -36,6 +36,7 @@ def getUserPlaylists(userString):
     return playlists
 
 def getUser(userString):
+    userString = userString.replace('spotify:user:', '')
     user = getUserFromString(userString)
     userid = ''
     if user is not None:
