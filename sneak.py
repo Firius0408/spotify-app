@@ -745,8 +745,9 @@ def search(string, kind):
 
 def searchRPOS(song):
     song = song.lower()
-    song = song.translate({ord(i): None for i in '-&()'})
+    song = song.translate({ord(i): None for i in ':&()'})
     song = song.split('feat.', 1)[0]
+    song = song.split('-', 1)[0]
     user = getUserFromString('firiusbob')
     accessToken = accessTokenForUser(user)
     headers = {'Authorization': 'Bearer ' + accessToken}
@@ -766,8 +767,9 @@ def searchRPOS(song):
                 continue
 
             test = p['track']['name'].lower()
-            test = test.translate({ord(i): None for i in '-&()'})
+            test = test.translate({ord(i): None for i in ':&()'})
             test = test.split('feat.', 1)[0]
+            test = test.split('-', 1)[0]
             if fuzz.partial_ratio(song, test) > 98 and fuzz.ratio(song, test) > 45:
                 diff = len(test) - len(song)
                 if diff < 100 and diff >= 0:
