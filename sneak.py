@@ -382,7 +382,7 @@ def topSongsInPlaylists(userString):
     threads = []
     for i in playlists:
         for s in i:
-            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id'] or s['name'] in ignore:
+            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id'] or s['name'] in ignore or "Common Songs " in s['name']:
                 continue
 
             x = threading.Thread(target=getSongsInPlaylist, args=(s, accessToken, tracks, name))
@@ -401,11 +401,12 @@ def topSongsInPlaylists(userString):
         del count[None]
 
     nameCount = {name[key] : value for key, value in list(count.items()) }
-    sortedCount = sorted(list(nameCount.items()), key=operator.itemgetter(1), reverse=True)
+    sortedName = sorted(list(nameCount.items()), key=operator.itemgetter(1), reverse=True)
+    sortedCount = sorted(list(count.items()), key=operator.itemgetter(1), reverse=True)
     with open('./sortedCount.json', 'w') as f:
-        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
+        json.dump(sortedName, f, indent=4, separators=(', ', ': '))
 
-    return sortedCount
+    return tracks
 
 def topSongsPlaylists(userString):
     playlists = getUserPlaylists(userString)
@@ -1029,3 +1030,27 @@ def playlistFollowers(userString):
         json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
 
     return sortedCount
+
+def people(users):
+    print('Pulling songs...')
+    ids = []
+    for i in users:
+        ids.append(topSongsInPlaylists(i))
+
+    print('Finding common songs...')
+    commonids = set(ids[0])
+    for i in ids[1:]:
+        commonids.intersection_update(i)
+
+    commonids = [i for i in commonids if i is not None]
+    commonuris = ['spotify:track:' + i for i in commonids]
+    names = [getUser(i)['display_name'] for i in users]
+    payload = json.dumps({'name': 'Common Songs between ' + ' and '.join(names)})
+    accessToken = accessTokenForUser(getUserFromString('firiusbob'))
+    print('Creating playlist...')
+    playlist = createPlaylist('firiusbob', accessToken, payload) 
+    url = playlist + '/tracks'
+    headers = {'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json'}
+    print('Populating playlist...')
+    for i in range(0, len(commonuris), 100):
+        r = requests.post(url, headers=headers, data=json.dumps({'uris': commonuris[i:i + 100]}))
