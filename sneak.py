@@ -140,12 +140,10 @@ def getSongsInPlaylist(s, accessToken, tracks, name):
             if p is None or p['track'] is None:
                 continue
 
-            tracks.append(p['track']['id'])
-            artists = []
-            for i in p['track']['artists']:
-                artists.append(i['name'])
-
-            name[p['track']['id']] = 'Title: ' + p['track']['name'] + '    Artists: ' + ', '.join(artists) + '     Album: ' + p['track']['album']['name'] + '  Popularity: ' + str(p['track']['popularity'])
+            track = p['track']
+            tracks.append(track['id'])
+            artists = [i['name'] for i in track['artists']]
+            name[track['id']] = 'Title: ' + track['name'] + '    Artists: ' + ', '.join(artists) + '     Album: ' + track['album']['name'] + '  Popularity: ' + str(track['popularity'])
         if r.json()['next'] is None:
             break
 
@@ -1031,7 +1029,7 @@ def playlistFollowers(userString):
 
     return sortedCount
 
-def people(users):
+def people(*users):
     print('Pulling songs...')
     ids = []
     for i in users:
