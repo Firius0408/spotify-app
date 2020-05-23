@@ -1030,6 +1030,8 @@ def playlistFollowers(userString):
     return sortedCount
 
 def people(*users):
+    refreshtoken = 'AQAcsVCKBnutCWVRPih8OsU1ScZRFjPTePJNaY0GSehMefJmFdscQlGeGuIoU4fAfZ0rkOrx2SCOW3zVMEt3zKJG0mt2yBgKJwilvgCdoZ-ftJBh6AK1PjNVOPWlbbb6vFs'
+    user = {'refresh_token': refreshtoken}
     print('Pulling songs...')
     ids = []
     for i in users:
@@ -1044,9 +1046,9 @@ def people(*users):
     commonuris = ['spotify:track:' + i for i in commonids]
     names = [getUser(i)['display_name'] for i in users]
     payload = json.dumps({'name': 'Common Songs between ' + ' and '.join(names)})
-    accessToken = accessTokenForUser(getUserFromString('firiusbob'))
+    accessToken = accessTokenForUser(user)
     print('Creating playlist...')
-    playlist = createPlaylist('firiusbob', accessToken, payload) 
+    playlist = createPlaylist('tr2brpyugxi6yg0pptop4r7tv', accessToken, payload) 
     url = playlist + '/tracks'
     headers = {'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json'}
     print('Populating playlist...')
