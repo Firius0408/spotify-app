@@ -85,11 +85,12 @@ def updatePlaylist(accessTokenUser, accessTokenPlaylist, term, playlisthref):
 def update():
     print('update initiated at ' + date.strftime("%Y-%m-%d %H:%M:%S"))
     print('\n\n\n')
-    botToken = accessTokenBot()
+    user = {'refresh_token': refreshtokenme}
+    topToken = accessTokenForUser(user)
     threads = []
     for i in userFile['users']:
         print('updating playlists for user ' + i['id'])
-        x = threading.Thread(target=updateIndividual, args=(i, botToken))
+        x = threading.Thread(target=updateIndividual, args=(i, topToken))
         threads.append(x)
         x.start()
 
