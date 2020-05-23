@@ -8,12 +8,10 @@ ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleac
 #ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'The Beatles']
 
 def getUserPlaylists(userString):
-    user = getUserFromString(userString)
-    userid = ''
-    if user is not None:
-        userid = user['id'] 
-    else:
-        userid = userString
+    user = getUser(userString)
+    userid = user['id']
+    if userid is None:
+        return
 
     accessToken = accessTokenBot()
     playlists = []
