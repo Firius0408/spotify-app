@@ -1054,3 +1054,5 @@ def people(*users):
     print('Populating playlist...')
     for i in range(0, len(commonuris), 100):
         r = requests.post(url, headers=headers, data=json.dumps({'uris': commonuris[i:i + 100]}))
+
+    return playlist.replace('https://api.spotify.com/v1/playlists/', 'spotify:playlist:')
