@@ -698,8 +698,9 @@ def findSongInPlaylists(userString, songId):
     return playlist
 
 def findArtistInPlayliststhread(s, accessToken, playlist, artistId):
-    url = s['tracks']['href'] + '?fields=next,items(track(artists))'
+    url = s['tracks']['href'] + '?fields=next,items(track(artists, name))'
     headers = {'Authorization': 'Bearer ' + accessToken}
+    temp = []
     while True:
         r = requests.get(url, headers=headers) 
         if r.status_code != 200:
