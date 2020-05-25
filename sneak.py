@@ -521,7 +521,7 @@ def playlistRepeats(userString, playlistString):
             continue
 
         for p in r.json()['items']:
-            if p is None:
+            if p is None or p['track'] is None:
                 continue
 
             artists = []
@@ -553,7 +553,7 @@ def playlistRepeatshref(playlisthref):
             continue
 
         for p in r.json()['items']:
-            if p is None:
+            if p is None or p['track'] is None:
                 continue
 
             artists = []
@@ -656,6 +656,7 @@ def findSongInPlayliststhread(s, accessToken, playlist, songId):
 
 def findSongInPlaylists(userString, songId):
     user = getUser(userString)
+    songId = songId.replace('spotify:track:', '')
     if user is None:
         return
 
@@ -698,16 +699,19 @@ def findArtistInPlayliststhread(s, accessToken, playlist, artistId):
 
             for j in p['track']['artists']:
                 if artistId == j['id']:
-                    playlist.append(s['name'])
-                    return
+                    temp.append(p['track']['name'])
 
         if r.json()['next'] is None:
+            if temp:
+                playlist.append((s['name'], temp))
+
             break
 
         url = r.json()['next'] + '?fields=next,items(track(artists))'
 
 def findArtistInPlaylists(userString, artistId):
     user = getUser(userString)
+    artistId = artistId.replace('spotify:artist:', '')
     if user is None:
         return
 
@@ -796,7 +800,7 @@ def searchPlayliststhread(s, accessToken, songhrefs, song):
                 continue
 
             test = p['track']['name'].lower()
-            test = test.translate({ord(i): None for i in '-&()'})
+            test = re.sub("[\(\[].*?[\)\]]", "", test)
             test = test.split('feat.', 1)[0]
             if fuzz.partial_ratio(song, test) > 98 and fuzz.ratio(song, test) > 45:
                 diff = len(test) - len(song)
@@ -810,7 +814,7 @@ def searchPlayliststhread(s, accessToken, songhrefs, song):
 
 def searchPlaylists(userString, song):
     song = song.lower()
-    song = song.translate({ord(i): None for i in '-&()'})
+    song = re.sub("[\(\[].*?[\)\]]", "", song)
     song = song.split('feat.', 1)[0]
     user = getUser(userString)
     if user is None:
