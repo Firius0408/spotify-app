@@ -1047,7 +1047,7 @@ def playlistFollowers(userString):
 
     return sortedCount
 
-def people(*users):
+def commonSongsUsers(*users):
     refreshtoken = 'AQAcsVCKBnutCWVRPih8OsU1ScZRFjPTePJNaY0GSehMefJmFdscQlGeGuIoU4fAfZ0rkOrx2SCOW3zVMEt3zKJG0mt2yBgKJwilvgCdoZ-ftJBh6AK1PjNVOPWlbbb6vFs'
     user = {'refresh_token': refreshtoken}
     print('Pulling songs...')
