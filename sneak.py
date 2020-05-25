@@ -571,6 +571,21 @@ def playlistRepeatshref(playlisthref):
 
     return findRepeats(name)
 
+def playlistRepeatsAll(userString):
+    playlists = getUserPlaylists(userString)
+    user = getUser(userString)
+    results = []
+    for j in playlists:
+        for i in j:
+            if "Top Songs of " in i['name'] or user['id'] != i['owner']['id']:
+                continue
+
+            result = playlistRepeatshref(i['tracks']['href'])
+            if result:
+                results.append((i['name'], result))
+
+    return results
+
 def findRepeats(L):
     seen = set()
     seen2 = set()
