@@ -4,7 +4,7 @@ import time
 import re
 import emoji
 
-ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'L?', 'IYLHLHG', 'Musical', 'Disney', 'Indie', 'Classical', 'Monstercat', 'Rap', 'House', 'The Beatles', 'Ashley', 'Jonathan', 'Daniel', 'Phillip', 'Shan']
+ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'L?', 'IYLHLHG', 'Musical', 'Disney', 'Indie', 'Classical', 'Monstercat', 'Rap', 'House', 'The Beatles', 'Ashley', 'Jonathan', 'Daniel', 'Phillip', 'Shan', 'Pegboard Nerds', 'Drake', 'Hardwell', 'Martin Garrix', 'Maroon 5', 'Taylor Swift']
 #ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'The Beatles']
 
 def getUserPlaylists(userString):
@@ -84,9 +84,9 @@ def getArtistsInPlaylist(s, accessToken, artists, grouped, count):
                 continue
 
             if grouped:
-                trackartists = [i['name'] for i in p['track']['artists']]
+                trackartists = ', '.join([i['name'] for i in p['track']['artists']])
                 if count or trackartists not in temp:
-                    temp.append(', '.join(trackartists))
+                    temp.append(trackartists)
             else:
                 for i in p['track']['artists']:
                     name = i['name']
