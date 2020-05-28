@@ -812,16 +812,17 @@ def searchPlayliststhread(s, accessToken, songhrefs, song):
             continue
 
         for p in r.json()['items']:
-            if p is None or p['track'] is None or p['track']['href'] in songhrefs:
+            track = p['track']
+            if p is None or track is None or track['href'] in songhrefs:
                 continue
 
-            test = p['track']['name'].lower()
+            test = track['name'].lower()
             test = re.sub("[\(\[].*?[\)\]]", "", test)
             test = test.split('feat.', 1)[0]
             if fuzz.partial_ratio(song, test) > 98 and fuzz.ratio(song, test) > 45:
                 diff = len(test) - len(song)
                 if diff < 100 and diff >= 0:
-                    songhrefs.append(p['track']['href'])
+                    songhrefs.append(track['href'])
 
         if r.json()['next'] is None:
             break
@@ -858,7 +859,7 @@ def searchPlaylists(userString, song):
     for i in songhrefs:
         r = requests.get(i, headers=headers)
         artists = [i['name'] for i in r.json()['artists']]
-        songs.append((r.json()['name'], artists, r.json()['id']))
+        songs.append((r.json()['id'], r.json()['name'], artists, r.json()['album']['name']))
 
     return songs
 
