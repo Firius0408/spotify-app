@@ -25,7 +25,7 @@ def getUserPlaylists(userString):
 
             continue
 
-        playlists.append(r.json()['items'])
+        playlists.extend(r.json()['items'])
         if r.json()['next'] is None:
             break
 
@@ -50,9 +50,8 @@ def getUser(userString):
 def getPlaylist(userString, playlistString):
     playlists = getUserPlaylists(userString)
     playlistnames = []
-    for i in playlists:
-        for s in i:
-            playlistnames.append(s['name'])
+    for s in playlists:
+        playlistnames.append(s['name'])
 
     namesdemoji = [emoji.demojize(i) for i in playlistnames]
     playlistString = emoji.demojize(playlistString)
@@ -62,10 +61,9 @@ def getPlaylist(userString, playlistString):
         print ('Unable to determine playlist')
         return
 
-    for i in playlists:
-        for s in i:
-            if s['name'] == playlistName:
-                return s
+    for s in playlists:
+        if s['name'] == playlistName:
+            return s
 
 def getArtistsInPlaylist(s, accessToken, artists, grouped, count):
     url = s['tracks']['href'] + '?fields=next,items(track(artists))'
@@ -194,17 +192,16 @@ def topArtistsInPlaylists(userString, count=False, grouped=False):
     accessToken = accessTokenBot()
     artists = []
     threads = []
-    for i in playlists:
-        for s in i:
-            if count and s['name'] in ignore:
-                continue
+    for s in playlists:
+        if count and s['name'] in ignore:
+            continue
 
-            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
-                continue
+        if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
+            continue
 
-            x = threading.Thread(target=getArtistsInPlaylist, args=(s, accessToken, artists, grouped, count))
-            threads.append(x)
-            x.start()
+        x = threading.Thread(target=getArtistsInPlaylist, args=(s, accessToken, artists, grouped, count))
+        threads.append(x)
+        x.start()
 
 
     for index, thread in enumerate(threads):
@@ -292,14 +289,13 @@ def topGenresInPlaylists(userString):
     accessToken = accessTokenBot()
     artists  = []
     threads = []
-    for i in playlists:
-        for s in i:
-            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id'] or s['name'] in ignore:
-                continue
+    for s in playlists:
+        if "Top Songs of " in s['name'] or user['id'] != s['owner']['id'] or s['name'] in ignore:
+            continue
 
-            x = threading.Thread(target=getGenresInPlaylist, args=(s, accessToken, artists,))
-            threads.append(x)
-            x.start()
+        x = threading.Thread(target=getGenresInPlaylist, args=(s, accessToken, artists,))
+        threads.append(x)
+        x.start()
 
 
     for index, thread in enumerate(threads):
@@ -376,14 +372,13 @@ def topSongsInPlaylists(userString):
     tracks = []
     name = {}
     threads = []
-    for i in playlists:
-        for s in i:
-            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id'] or s['name'] in ignore or "Common Songs " in s['name']:
-                continue
+    for s in playlists:
+        if "Top Songs of " in s['name'] or user['id'] != s['owner']['id'] or s['name'] in ignore or "Common Songs " in s['name']:
+            continue
 
-            x = threading.Thread(target=getSongsInPlaylist, args=(s, accessToken, tracks, name))
-            threads.append(x)
-            x.start()
+        x = threading.Thread(target=getSongsInPlaylist, args=(s, accessToken, tracks, name))
+        threads.append(x)
+        x.start()
 
 
     for index, thread in enumerate(threads):
@@ -408,14 +403,13 @@ def topSongsPlaylists(userString):
     playlists = getUserPlaylists(userString)
     accessToken = accessTokenBot()
     threads = []
-    for i in playlists:
-        for s in i:
-            if "Top Songs of " not in s['name']:
-                continue
+    for s in playlists:
+        if "Top Songs of " not in s['name']:
+            continue
 
-            x = threading.Thread(target=getSongsPlaylist, args=(s, accessToken))
-            threads.append(x)
-            x.start()
+        x = threading.Thread(target=getSongsPlaylist, args=(s, accessToken))
+        threads.append(x)
+        x.start()
 
 
     for index, thread in enumerate(threads):
@@ -612,14 +606,13 @@ def ratio(userString = 'firiusbob', playlistString = 'Random Pool of Stuff'):
     accessToken = accessTokenBot()
     artists = []
     threads = []
-    for i in playlists:
-        for s in i:
-            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id'] or s['name'] in ignore:
-                continue
+    for s in playlists:
+        if "Top Songs of " in s['name'] or user['id'] != s['owner']['id'] or s['name'] in ignore:
+            continue
 
-            x = threading.Thread(target=getArtistsInPlaylist, args=(s, accessToken, artists, False))
-            threads.append(x)
-            x.start()
+        x = threading.Thread(target=getArtistsInPlaylist, args=(s, accessToken, artists, False))
+        threads.append(x)
+        x.start()
 
 
     for index, thread in enumerate(threads):
@@ -679,14 +672,13 @@ def findSongInPlaylists(userString, songId):
     accessToken = accessTokenBot()
     playlist = []
     threads = []
-    for i in playlists:
-        for s in i:
-            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
-                continue
+    for s in playlists:
+        if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
+            continue
 
-            x = threading.Thread(target=findSongInPlayliststhread, args=(s, accessToken, playlist, songId))
-            threads.append(x)
-            x.start()
+        x = threading.Thread(target=findSongInPlayliststhread, args=(s, accessToken, playlist, songId))
+        threads.append(x)
+        x.start()
 
 
     for index, thread in enumerate(threads):
@@ -735,14 +727,13 @@ def findArtistInPlaylists(userString, artistId):
     accessToken = accessTokenBot()
     playlist = []
     threads = []
-    for i in playlists:
-        for s in i:
-            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
-                continue
+    for s in playlists:
+        if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
+            continue
 
-            x = threading.Thread(target=findArtistInPlayliststhread, args=(s, accessToken, playlist, artistId))
-            threads.append(x)
-            x.start()
+        x = threading.Thread(target=findArtistInPlayliststhread, args=(s, accessToken, playlist, artistId))
+        threads.append(x)
+        x.start()
 
 
     for index, thread in enumerate(threads):
@@ -841,14 +832,13 @@ def searchPlaylists(userString, song):
     accessToken = accessTokenBot()
     songhrefs = []
     threads = []
-    for i in playlists:
-        for s in i:
-            if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
-                continue
+    for s in playlists:
+        if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
+            continue
 
-            x = threading.Thread(target=searchPlayliststhread, args=(s, accessToken, songhrefs, song))
-            threads.append(x)
-            x.start()
+        x = threading.Thread(target=searchPlayliststhread, args=(s, accessToken, songhrefs, song))
+        threads.append(x)
+        x.start()
 
 
     for index, thread in enumerate(threads):
@@ -1024,9 +1014,8 @@ def playlistFollowers(userString):
     playlists = getUserPlaylists(userString)
     user = getUser(userString)
     nameids = []
-    for i in playlists:
-        for s in i:
-            nameids.append((s['name'], s['id'], s['owner']['id']))
+    for s in playlists:
+        nameids.append((s['name'], s['id'], s['owner']['id']))
 
     accessToken = accessTokenBot()
     followers = []
