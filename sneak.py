@@ -503,39 +503,12 @@ def songPopularityhref(playlisthref):
 def playlistRepeats(userString, playlistString):
     playlist = getPlaylist(userString, playlistString)
     accessToken = accessTokenBot()
-    name = []
+    results = []
+    playlistRepeatsthread(playlist, accessToken, results)
+    return results
+
+def playlistRepeatsthread(playlist, accessToken, results):
     url = playlist['tracks']['href'] + '?fields=next,items(track(name,artists(name)))'
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
-
-            continue
-
-        for p in r.json()['items']:
-            if p is None or p['track'] is None:
-                continue
-
-            artists = []
-            for i in p['track']['artists']:
-                artists.append(i['name'])
-
-            name.append('Title: ' + p['track']['name'] + '    Artists: ' + ', '.join(artists))
-        if r.json()['next'] is None:
-            break
-
-        url = r.json()['next']
-
-    while None in name:
-        name.remove(None)
-
-    return findRepeats(name)
-
-def playlistRepeatshref(playlisthref):
-    accessToken = accessTokenBot()
-    url = playlisthref + '?fields=next,items(track(name,artists(name)))'
     name = []
     headers = {'Authorization': 'Bearer ' + accessToken}
     while True:
@@ -550,11 +523,9 @@ def playlistRepeatshref(playlisthref):
             if p is None or p['track'] is None:
                 continue
 
-            artists = []
-            for i in p['track']['artists']:
-                artists.append(i['name'])
-
-            name.append('Title: ' + p['track']['name'] + '    Artists: ' + ', '.join(artists))
+            track = p['track']
+            artists = [i['name'] for i in track['artists']]
+            name.append('Title: ' + track['name'] + '    Artists: ' + ', '.join(artists))
         if r.json()['next'] is None:
             break
 
@@ -563,20 +534,26 @@ def playlistRepeatshref(playlisthref):
     while None in name:
         name.remove(None)
 
-    return findRepeats(name)
+    result = findRepeats(name)
+    if result:
+        results.append((playlist['name'], result))
 
 def playlistRepeatsAll(userString):
     playlists = getUserPlaylists(userString)
     user = getUser(userString)
+    accessToken = accessTokenBot()
     results = []
-    for j in playlists:
-        for i in j:
-            if "Top Songs of " in i['name'] or user['id'] != i['owner']['id']:
-                continue
+    threads = []
+    for i in playlists:
+        if "Top Songs of " in i['name'] or user['id'] != i['owner']['id']:
+            continue
 
-            result = playlistRepeatshref(i['tracks']['href'])
-            if result:
-                results.append((i['name'], result))
+        x = threading.Thread(target=playlistRepeatsthread, args=(i, accessToken, results))
+        threads.append(x)
+        x.start()
+
+    for i in threads:
+        i.join()
 
     return results
 
