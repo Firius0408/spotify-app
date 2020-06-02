@@ -1041,3 +1041,55 @@ def commonSongsUsers(*users):
         r = requests.post(url, headers=headers, data=json.dumps({'uris': commonuris[i:i + 100]}))
 
     return playlist.replace('https://api.spotify.com/v1/playlists/', 'spotify:playlist:')
+
+def getTracks(ids):
+    url = 'https://api.spotify.com/v1/tracks?ids='
+    accessToken = accessTokenBot()
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    results = []
+    for i in range(0, len(ids), 50):
+        url += ','.join(ids[i:i + 50])
+        r = requests.get(url, headers=headers)
+        results.extend(r.json()['tracks'])
+
+    return results
+
+def playlistDiff(userString1, playlistString1, userString2, playlistString2):
+    playlist1 = getPlaylist(userString1, playlistString1)
+    playlist2 = getPlaylist(userString2, playlistString2)
+    accessToken = accessTokenBot()
+    tracks1 = []
+    tracks2 = []
+    name = {}
+    getSongsInPlaylist(playlist1, accessToken, tracks1, name)
+    getSongsInPlaylist(playlist2, accessToken, tracks2, name)
+    setplaylist1 = set(tracks1)
+    setplaylist2 = set(tracks2)
+    same = list(setplaylist1 & setplaylist2)
+    diff1 = list(setplaylist1 - setplaylist2)
+    diff2 = list(setplaylist2 - setplaylist1)
+    same = [i['name'] for i in getTracks(same)]
+    diff1 = [i['name'] for i in getTracks(diff1)]
+    diff2 = [i['name'] for i in getTracks(diff2)]
+    return (same, diff1, diff2)
+
+def checkWd():
+    user = getUser('firiusbob')
+    accesstoken = accessTokenBot()
+    playlists = getUserPlaylists('firiusbob')
+    filtered = [i for i in playlists if 'Wd' in i['name']]
+    name = {}
+    wd = []
+    subs = []
+    for i in filtered:
+        tracks = []
+        getSongsInPlaylist(i, accesstoken, tracks, name)
+        if i['name'] == 'Weekend (Wd)':
+            wd.extend(tracks)
+        else:
+            subs.extend(tracks)
+
+    repeats = findRepeats(subs)
+    wd = set(wd)
+    subs = set(subs)
+    return (list(wd - subs), list(subs - wd), repeats)
