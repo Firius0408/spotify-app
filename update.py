@@ -15,7 +15,6 @@ def accessTokenBot():
     url = 'https://accounts.spotify.com/api/token'
     payload = {
             'grant_type': 'client_credentials',
-            'refresh_token': refreshtokenme,
             'client_id': client_id,
             'client_secret': client_secret
             }
