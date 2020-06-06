@@ -1048,8 +1048,8 @@ def getTracks(ids):
     headers = {'Authorization': 'Bearer ' + accessToken}
     results = []
     for i in range(0, len(ids), 50):
-        url += ','.join(ids[i:i + 50])
-        r = requests.get(url, headers=headers)
+        tempurl = url + ','.join(ids[i:i + 50])
+        r = requests.get(tempurl, headers=headers)
         results.extend(r.json()['tracks'])
 
     return results
@@ -1065,6 +1065,12 @@ def playlistDiff(userString1, playlistString1, userString2, playlistString2):
     getSongsInPlaylist(playlist2, accessToken, tracks2, name)
     setplaylist1 = set(tracks1)
     setplaylist2 = set(tracks2)
+    if None in setplaylist1:
+        setplaylist1.remove(None)
+
+    if None in setplaylist2:
+        setplaylist2.remove(None)
+
     same = list(setplaylist1 & setplaylist2)
     diff1 = list(setplaylist1 - setplaylist2)
     diff2 = list(setplaylist2 - setplaylist1)
