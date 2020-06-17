@@ -162,7 +162,7 @@ def getSongsPlaylist(s, accessToken):
 
     date = datetime.datetime.strptime(match.group(), '%m/%d/%Y').date()
     filename = date.strftime('%Y-%m-%d')
-    print(directory + '     ' + filename)
+    print(directory + '     ' + filename + ' found')
     url = s['tracks']['href'] + '?fields=next,items(track(name))'
     name = []
     headers = {'Authorization': 'Bearer ' + accessToken}
@@ -183,6 +183,7 @@ def getSongsPlaylist(s, accessToken):
         url = r.json()['next'] + '?fields=next,items(track(name))'
 
     filtered = [i for i in name if i]
+    print('writing ' + directory + '     ' + filename)
     with open('./topsongs/' + directory + '/' + filename + '.json', 'w') as f:
         json.dump(filtered, f, indent=4, separators=(', ', ': '))
 
@@ -1054,6 +1055,18 @@ def getTracks(ids):
 
     return results
 
+def getAudioFeatures(ids):
+    url = 'https://api.spotify.com/v1/audio-features?ids='
+    accessToken = accessTokenBot()
+    headers = {'Authorization': 'Bearer ' + accessToken}
+    results = []
+    for i in range(0, len(ids), 100):
+        tempurl = url + ','.join(ids[i:i + 100])
+        r = requests.get(tempurl, headers=headers)
+        results.extend(r.json()['audio_features'])
+
+    return results
+
 def playlistDiff(userString1, playlistString1, userString2, playlistString2):
     playlist1 = getPlaylist(userString1, playlistString1)
     playlist2 = getPlaylist(userString2, playlistString2)
@@ -1099,3 +1112,44 @@ def checkWd():
     wd = set(wd)
     subs = set(subs)
     return (list(wd - subs), list(subs - wd), repeats)
+
+def topFeaturesPlaylists():
+    user = 'firiusbob'
+    accessToken = accessTokenForUser(getUserFromString(user))
+    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks'
+    proxy = {}
+    proxy['tracks'] = {}
+    proxy['tracks']['href'] = url
+    ids = []
+    name = {}
+    getSongsInPlaylist(proxy, accessToken, ids, name)
+    setids = set(ids)
+    if None in setids:
+        setids.remove(None)
+
+    ids = list(setids)
+    features = getAudioFeatures(ids)
+    dance = [(i['uri'], i['danceability']) for i in features]
+    energy = [(i['uri'], i['energy']) for i in features]
+    valence = [(i['uri'], i['valence']) for i in features]
+    sorteddance = sorted(dance, key=operator.itemgetter(1), reverse=True)
+    sortedenergy = sorted(energy, key=operator.itemgetter(1), reverse=True)
+    sortedvalence = sorted(valence, key=operator.itemgetter(1), reverse=True)
+    danceuris = [i[0] for i in sorteddance[0:250]]
+    energyuris = [i[0] for i in sortedenergy[0:250]]
+    valenceuris = [i[0] for i in sortedvalence[0:250]]
+    dancehref = createPlaylist(user, accessToken, json.dumps({'name': 'Top Danceability Songs for ' + user}))
+    energyhref = createPlaylist(user, accessToken, json.dumps({'name': 'Top Energy Songs for ' + user}))
+    valencehref = createPlaylist(user, accessToken, json.dumps({'name': 'Top Valence Songs for ' + user}))
+    danceurl = dancehref + '/tracks'
+    energyurl = energyhref + '/tracks'
+    valenceurl = valencehref + '/tracks'
+    headers = {'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json'}
+    for i in range(0, len(danceuris), 100):
+            r = requests.post(danceurl, headers=headers, data=json.dumps({'uris': danceuris[i:i+100]}))
+
+    for i in range(0, len(energyuris), 100):
+        r = requests.post(energyurl, headers=headers, data=json.dumps({'uris': energyuris[i:i+100]}))
+
+    for i in range(0, len(valenceuris), 100):
+        r = requests.post(valenceurl, headers=headers, data=json.dumps({'uris': valenceuris[i:i+100]}))
