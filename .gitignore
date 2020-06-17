@@ -2,6 +2,7 @@
 *.pyc
 Pipfile.lock
 *log
+.env
 /.vscode/**
 /topsongs/**
 !/topsongs/diff.py
