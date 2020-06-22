@@ -9,5 +9,6 @@ pylint = "*"
 [packages]
 fuzzywuzzy = "*"
 python-levenshtein = "*"
-requests = "*"
 emoji = "*"
+spotifywebapi = "*"
+python-dotenv = "*"

@@ -1,54 +1,41 @@
-import requests
+import spotifywebapi
 import json
 import datetime
-import base64
 import threading
 import sys
+import os
+import dotenv
 
-client_id = 'bda7b557a026402d92584e140e291f57'
-client_secret = '160f08d795334c85a7227b695b1d54f3'
-refreshtokenme = 'AQBzPXpkLqDOctHGd092exRtHaw0WIg7wtgNB9BFKlJtMJboyq_EFHruvhUbLKp38AByxmss_kN1ViTwaroT0T_QbpOuEV9tn4O8AvXxsawTHnrap8pnwG98u3qYw1j8rS8'
-useridme = 'ohjber0jdol59842ilmd8w0a2'
+dotenv.load_dotenv()
+
+try:
+    sp = spotifywebapi.Spotify(os.getenv('CLIENT_ID'), os.getenv('CLIENT_SECRET'))
+except spotifywebapi.SpotifyError:
+    print('Error loading bot')
+    exit()
 
 # returns a valid access token for the bot
 def accessTokenBot():
-    url = 'https://accounts.spotify.com/api/token'
-    payload = {
-            'grant_type': 'client_credentials',
-            'client_id': client_id,
-            'client_secret': client_secret
-            }
-    r = requests.post(url, data=payload)
-    if (r.status_code == 200):
-        return r.json()['access_token']
+    return sp.accessToken
 
-# returns a valid access token for the user object
-def accessTokenForUser(user):
-    refresh_token = user['refresh_token']
-    url = 'https://accounts.spotify.com/api/token'
-    payload = {
-            'grant_type': 'refresh_token',
-            'refresh_token': refresh_token,
-            'client_id': client_id,
-            'client_secret': client_secret
-            }
-    r = requests.post(url, data=payload)
-    if (r.status_code == 200):
-        return r.json()['access_token']
+def getUser(user):
+    return sp.getAuthUser(user['refresh_token'])
 
 # updates the three continuously updated playlists for the given user object
-def updateIndividual(user, botToken):
-    playlisthreflong = user['playlisthreflong']
-    playlisthrefmid = user['playlisthrefmid']
-    playlisthrefshort = user['playlisthrefshort']
-    accessTokenUser = accessTokenForUser(user)
-    if accessTokenUser is None:
+def updateIndividual(user, botuser):
+    playlistidlong = user['playlistidlong']
+    playlistidmid = user['playlistidmid']
+    playlistidshort = user['playlistidshort']
+    try:
+        userobj = getUser(user)
+    except spotifywebapi.SpotifyError:
         print('app not authorized for user ' + user['id'])
         return
 
-    x = threading.Thread(target=updatePlaylist, args=(accessTokenUser, botToken, 'long_term', playlisthreflong,))
-    y = threading.Thread(target=updatePlaylist, args=(accessTokenUser, botToken, 'medium_term', playlisthrefmid,))
-    z = threading.Thread(target=updatePlaylist, args=(accessTokenUser, botToken, 'short_term', playlisthrefshort,))
+    print('updating playlists for user ' + userobj.getUser()['display_name'])
+    x = threading.Thread(target=updatePlaylist, args=(userobj, botuser, 'long_term', playlistidlong,))
+    y = threading.Thread(target=updatePlaylist, args=(userobj, botuser, 'medium_term', playlistidmid,))
+    z = threading.Thread(target=updatePlaylist, args=(userobj, botuser, 'short_term', playlistidshort,))
     x.start()
     print('updating long playlist for user ' + user['id'])
     y.start()
@@ -63,60 +50,37 @@ def updateIndividual(user, botToken):
     print('finished updating short playlist for user ' + user['id'])
 
 # Populates the given playlist with the current top songs for the given term for the user with accessTokenForUser
-# accessTokenPlaylist for access token of owner of given playlist in playlisthref
-def updatePlaylist(accessTokenUser, accessTokenPlaylist, term, playlisthref):
-    url = 'https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=' + term
-    headers = {'Authorization': 'Bearer ' + accessTokenUser }
-    r = requests.get(url, headers=headers)
-    uri = []
-    url = playlisthref + '/tracks/'
-    headers = { 
-            'Authorization': 'Bearer ' + accessTokenPlaylist,
-            'Content-Type': 'application/json'
-            }
-    #throwout = requests.put(url, headers=headers, data=json.dumps({'uris': uri}))
-    for i in r.json()['items']:
-        uri.append(i['uri'])
-
-    r = requests.put(url, headers=headers, data=json.dumps({'uris': uri}))
+# accessTokenPlaylist for access token of owner of given playlist in playlistid
+def updatePlaylist(user, playlistuser, term, playlistid):
+    topsongs = user.getTopSongs(term, limit=50)
+    uris = [i['uri'] for i in topsongs['items']]
+    try:
+        playlistuser.replacePlaylistItems(playlistid, uris)
+    except spotifywebapi.StatusCodeError as err:
+        print(err.message + ' for ' + user.getUser()['display_name'])
 
 # updates all continuously updated playlists for all users in users.json
 def update():
     print('update initiated at ' + date.strftime("%Y-%m-%d %H:%M:%S"))
     print('\n\n\n')
-    user = {'refresh_token': refreshtokenme}
-    topToken = accessTokenForUser(user)
+    botuser = sp.getAuthUser(os.getenv('REFRESHTOKENME'))
     threads = []
     for i in userFile['users']:
-        print('updating playlists for user ' + i['id'])
-        x = threading.Thread(target=updateIndividual, args=(i, topToken))
+        x = threading.Thread(target=updateIndividual, args=(i, botuser))
         threads.append(x)
         x.start()
 
-    for index, thread in enumerate(threads):
+    for thread in threads:
         thread.join()
 
 def last100RandomPool():
-    accessToken = accessTokenForUser(userFile['users'][0])
-    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks?fields=total'
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    r = requests.get(url, headers=headers)
-    total = r.json()['total']
+    userme = getUser(userFile['users'][0])
+    rpos = sp.getPlaylistFromId('5WYRn0FxSUhVsOQpQQ0xBV')
+    total = rpos['tracks']['total']
     offset = total - 100
-    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks?fields=items(track(uri),is_local)&offset=' + str(offset)
-    r = requests.get(url, headers=headers)
-    url = 'https://api.spotify.com/v1/playlists/1iAyKjAS15OOlFBFtnWX1n/tracks'
-    headers = { 
-            'Authorization': 'Bearer ' + accessToken,
-            'Content-Type': 'application/json'
-            }
-    uri = []
-    #throwout = requests.put(url, headers=headers, data=json.dumps({'uris': uri}))
-    for i in r.json()['items']:
-        if i['is_local'] is False:
-            uri.append(i['track']['uri'])
-
-    r = requests.put(url, headers=headers, data=json.dumps({'uris': uri}))
+    tracks = sp.getTracksFromItem(rpos)
+    uris = [i['track']['uri'] for i in tracks[offset:] if i['is_local'] is False]
+    userme.replacePlaylistItems('1iAyKjAS15OOlFBFtnWX1n', uris)
 
 date = datetime.datetime.today()
 if __name__ == '__main__':
