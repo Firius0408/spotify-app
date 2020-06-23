@@ -1,9 +1,14 @@
-from update import *
-from fuzzywuzzy import fuzz
+import spotifywebapi
 from fuzzywuzzy import process
 import random
 import string
+import json
+import threading
+import sys
+import requests
+import os
 from urllib.parse import urlparse, parse_qs
+from update import accessTokenBot, getUser, updatePlaylist, userFile, sp, date, updateIndividual
 
 redirect_uri = 'http://localhost:8081/callback' # not used, needed to satisfy spotify auth
 
@@ -26,25 +31,17 @@ def getUserFromString(userString):
         if (i['id'] == userid[0]):
             return i
 
-#creates playlist. Pass in userid and accessToken for user. Payload contains playlist's name. Returns playlist's href
-def createPlaylist(userid, accessToken, payload):
-    url = 'https://api.spotify.com/v1/users/' + userid + '/playlists/'
-    headers =  { 
-            'Authorization': 'Bearer ' + accessToken,
-            'Content-Type': 'application/json'
-            }
-    r = requests.post(url, headers=headers, data=payload)
-    return r.json()['href']
-
 # creates snapshot playlist of user with given userid, accessToken, time and term (time and term should match)
-def playlistIndividual(userid, accessToken, time, term):
-    payload = json.dumps({ 'name': "Top Songs of " + time + " as of " + date.strftime("%m/%d/%Y")})
-    playlisthref = createPlaylist(userid, accessToken, payload)
-    updatePlaylist(accessToken, accessToken, term, playlisthref)
+def playlistIndividual(userobj, time, term):
+    playlistobj = userobj.createPlaylist("Top Songs of " + time + " as of " + date.strftime("%m/%d/%Y"))
+    playlistid = playlistobj['id']
+    updatePlaylist(userobj, userobj, term, playlistid)
 
 # auth new user, add to users.json, create continuously updated playlists
 # re auth old user
 def authUser():
+    client_id = sp.client_id
+    client_secret = sp.client_secret
     state = generateRandomString(16)
     scope = 'playlist-modify-public playlist-modify-private user-top-read'
     url = 'https://accounts.spotify.com/authorize?client_id=' + client_id + '&response_type=code&redirect_uri=' + redirect_uri + '&scope=' + scope + '&state=' + state
@@ -65,40 +62,38 @@ def authUser():
             'client_secret': client_secret
             }
     r = requests.post(url, data=payload)
-    if (r.status_code == 200):
-        accessToken = r.json()['access_token']
-        refreshToken = r.json()['refresh_token']
+    if r.status_code != 200:
+        print('Error! API returned a bad status code')
+        return
 
-    url = 'https://api.spotify.com/v1/me'
-    headers = { 'Authorization': 'Bearer ' + accessToken }
-    r = requests.get(url, headers=headers)
-    userid = r.json()['id']
-    name = userid
-    if r.json()['display_name'] is not None:
-        name = r.json()['display_name']
-
+    refreshToken = r.json()['refresh_token']
+    user = sp.getAuthUser(refreshToken)
+    userid = user.getUser()['id']
+    name = user.getUser()['display_name']
     users = userFile['users']
-    flag = False
-    for i in users:
-        if (userid == i['id']):
-            print('user found')
-            i['refresh_token'] = refreshToken
-            flag = True
-            break
-
-    if not flag:
+    if userid not in [i['id'] for i in users]:
         print('new user found')
-        botToken = accessTokenBot()
-        playlisthreflong = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of All-Time for " + name, 'public': 'true' }))
-        playlisthrefmid = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of 6 Months for " + name, 'public': 'true' }))
-        playlisthrefshort = createPlaylist(useridme, botToken, json.dumps({ 'name': "Top Songs of 4 Weeks for " + name, 'public': 'true' }))
+        botuser = sp.getAuthUser(os.getenv('REFRESHTOKENME'))
+        try:
+            playlistlong = botuser.createPlaylist("Top Songs of All-Time for " + name, public=True)
+            playlistmid = botuser.createPlaylist("Top Songs of 6 Months for " + name, public=True)
+            playlistshort = botuser.createPlaylist("Top Songs of 4 Weeks for " + name, public=True)
+        except spotifywebapi.StatusCodeError:
+            return
+
         user = {'id': userid,
             'refresh_token': refreshToken,
-            'playlisthreflong': playlisthreflong,
-            'playlisthrefmid': playlisthrefmid,
-            'playlisthrefshort': playlisthrefshort}
-        updateIndividual(user, botToken)
+            'playlistidlong': playlistlong['id'],
+            'playlistidmid': playlistmid['id'],
+            'playlistidshort': playlistshort['id']}
+        updateIndividual(user, botuser)
         users.append(user)
+    else:
+        print('user found')
+        for i in users:
+            if i['id'] == userid:
+                i['refresh_token'] = refreshToken
+                break
 
     userFile['users'] = users
     if __name__ == '__main__':
@@ -111,24 +106,24 @@ def authUser():
 # creates the three snapshot playlists for the user string
 def playlist(userString):
     user = getUserFromString(userString)
-    accessToken = accessTokenForUser(user)
-    userid = user['id']
-    print('creating playlists for user ' + userid)
-    x = threading.Thread(target=playlistIndividual, args=(userid, accessToken, "All-Time", 'long_term',))
-    y = threading.Thread(target=playlistIndividual, args=(userid, accessToken, "the Past 6 Months", 'medium_term',))
-    z = threading.Thread(target=playlistIndividual, args=(userid, accessToken, "the Past 4 Weeks", 'short_term',))
+    userobj = getUser(user)
+    username = userobj.getUser()['display_name']
+    print('creating playlists for user ' + username)
+    x = threading.Thread(target=playlistIndividual, args=(userobj, "All-Time", 'long_term',))
+    y = threading.Thread(target=playlistIndividual, args=(userobj, "the Past 6 Months", 'medium_term',))
+    z = threading.Thread(target=playlistIndividual, args=(userobj, "the Past 4 Weeks", 'short_term',))
     x.start()
-    print('creating long playlist for user ' + userid)
+    print('creating long playlist for user ' + username)
     y.start()
-    print('creating mid playlist for user ' + userid)
+    print('creating mid playlist for user ' + username)
     z.start()
-    print('creating short playlist for user ' + userid)
+    print('creating short playlist for user ' + username)
     x.join()
-    print('finished creating long playlist for user ' + userid)
+    print('finished creating long playlist for user ' + username)
     y.join()
-    print('finished creating mid playlist for user ' + userid)
+    print('finished creating mid playlist for user ' + username)
     z.join()
-    print('finished creating short playlist for user ' + userid)
+    print('finished creating short playlist for user ' + username)
 
 if __name__ == '__main__':
     if (len(sys.argv) > 1):
@@ -140,5 +135,3 @@ if __name__ == '__main__':
             authUser()
         else:
             playlist(sys.argv[1])
-    else:
-        update()

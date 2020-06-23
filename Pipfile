@@ -5,6 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 pylint = "*"
+autopep8 = "*"
 
 [packages]
 fuzzywuzzy = "*"
@@ -12,3 +13,4 @@ python-levenshtein = "*"
 emoji = "*"
 spotifywebapi = "*"
 python-dotenv = "*"
+requests = "*"
