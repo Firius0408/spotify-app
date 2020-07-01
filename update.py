@@ -8,46 +8,47 @@ import dotenv
 
 dotenv.load_dotenv()
 
+refreshtokenme = os.getenv('REFRESHTOKENME')
+
 try:
     sp = spotifywebapi.Spotify(os.getenv('CLIENT_ID'), os.getenv('CLIENT_SECRET'))
 except spotifywebapi.SpotifyError:
     print('Error loading bot')
     exit()
 
-# returns a valid access token for the bot
-def accessTokenBot():
-    return sp.accessToken
+botuser = sp.getAuthUser(refreshtokenme)
 
-def getUser(user):
+def getAuthUser(user):
     return sp.getAuthUser(user['refresh_token'])
 
 # updates the three continuously updated playlists for the given user object
-def updateIndividual(user, botuser):
+def updateIndividual(user):
     playlistidlong = user['playlistidlong']
     playlistidmid = user['playlistidmid']
     playlistidshort = user['playlistidshort']
     try:
-        userobj = getUser(user)
+        userobj = getAuthUser(user)
     except spotifywebapi.SpotifyError:
         print('app not authorized for user ' + user['id'])
         return
 
-    print('updating playlists for user ' + userobj.getUser()['display_name'])
+    name = userobj.getUser()['display_name']
+    print('updating playlists for user ' + name)
     x = threading.Thread(target=updatePlaylist, args=(userobj, botuser, 'long_term', playlistidlong,))
     y = threading.Thread(target=updatePlaylist, args=(userobj, botuser, 'medium_term', playlistidmid,))
     z = threading.Thread(target=updatePlaylist, args=(userobj, botuser, 'short_term', playlistidshort,))
     x.start()
-    print('updating long playlist for user ' + user['id'])
+    print('updating long playlist for user ' + name)
     y.start()
-    print('updating mid playlist for user ' + user['id'])
+    print('updating mid playlist for user ' + name)
     z.start()
-    print('updating short playlist for user ' + user['id'])
+    print('updating short playlist for user ' + name)
     x.join()
-    print('finished updating long playlist for user ' + user['id'])
+    print('finished updating long playlist for user ' + name)
     y.join()
-    print('finished updating mid playlist for user ' + user['id'])
+    print('finished updating mid playlist for user ' + name)
     z.join()
-    print('finished updating short playlist for user ' + user['id'])
+    print('finished updating short playlist for user ' + name)
 
 # Populates the given playlist with the current top songs for the given term for the user with accessTokenForUser
 # accessTokenPlaylist for access token of owner of given playlist in playlistid
@@ -63,10 +64,9 @@ def updatePlaylist(user, playlistuser, term, playlistid):
 def update():
     print('update initiated at ' + date.strftime("%Y-%m-%d %H:%M:%S"))
     print('\n\n\n')
-    botuser = sp.getAuthUser(os.getenv('REFRESHTOKENME'))
     threads = []
     for i in userFile['users']:
-        x = threading.Thread(target=updateIndividual, args=(i, botuser))
+        x = threading.Thread(target=updateIndividual, args=(i,))
         threads.append(x)
         x.start()
 
@@ -74,7 +74,7 @@ def update():
         thread.join()
 
 def last100RandomPool():
-    userme = getUser(userFile['users'][0])
+    userme = getAuthUser(userFile['users'][0])
     rpos = sp.getPlaylistFromId('5WYRn0FxSUhVsOQpQQ0xBV')
     total = rpos['tracks']['total']
     offset = total - 100

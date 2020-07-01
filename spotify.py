@@ -6,9 +6,8 @@ import json
 import threading
 import sys
 import requests
-import os
 from urllib.parse import urlparse, parse_qs
-from update import accessTokenBot, getUser, updatePlaylist, userFile, sp, date, updateIndividual
+from update import getAuthUser, updatePlaylist, userFile, sp, date, updateIndividual, botuser
 
 redirect_uri = 'http://localhost:8081/callback' # not used, needed to satisfy spotify auth
 
@@ -73,7 +72,6 @@ def authUser():
     users = userFile['users']
     if userid not in [i['id'] for i in users]:
         print('new user found')
-        botuser = sp.getAuthUser(os.getenv('REFRESHTOKENME'))
         try:
             playlistlong = botuser.createPlaylist("Top Songs of All-Time for " + name, public=True)
             playlistmid = botuser.createPlaylist("Top Songs of 6 Months for " + name, public=True)
@@ -86,7 +84,7 @@ def authUser():
             'playlistidlong': playlistlong['id'],
             'playlistidmid': playlistmid['id'],
             'playlistidshort': playlistshort['id']}
-        updateIndividual(user, botuser)
+        updateIndividual(user)
         users.append(user)
     else:
         print('user found')
@@ -106,7 +104,7 @@ def authUser():
 # creates the three snapshot playlists for the user string
 def playlist(userString):
     user = getUserFromString(userString)
-    userobj = getUser(user)
+    userobj = getAuthUser(user)
     username = userobj.getUser()['display_name']
     print('creating playlists for user ' + username)
     x = threading.Thread(target=playlistIndividual, args=(userobj, "All-Time", 'long_term',))
