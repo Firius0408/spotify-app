@@ -1,187 +1,61 @@
-from spotify import *
+import spotifywebapi
+from fuzzywuzzy import process, fuzz
+import json
 import operator
 import time
 import re
+import sys
 import emoji
+import threading
+import datetime
+from update import getAuthUser, userFile, sp, refreshtokenme, botuser
+from spotify import getUserFromString
 
-ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'L?', 'IYLHLHG', 'Musical', 'Disney', 'Indie', 'Classical', 'Monstercat', 'Rap', 'House', 'The Beatles', 'Ashley', 'Jonathan', 'Daniel', 'Phillip', 'Shan', 'Pegboard Nerds', 'Drake', 'Hardwell', 'Martin Garrix', 'Maroon 5', 'Taylor Swift']
+ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'L?', 'IYLHLHG', 'Musical', 'Disney', 'Indie', 'Classical', 'Monstercat', 'Rap', 'House', 'The Beatles', 'Ashley', 'Jonathan', 'Daniel', 'Phillip', 'Shan', 'Pegboard Nerds', 'Drake', 'Hardwell', 'Martin Garrix', 'Maroon 5', 'Taylor Swift', 'Andrea Bocelli', 'Kygo', 'OneRepublic']
 #ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'The Beatles']
 
-def getUserPlaylists(userString):
-    user = getUser(userString)
-    userid = user['id']
-    if userid is None:
-        return
-
-    accessToken = accessTokenBot()
-    playlists = []
-    url = 'https://api.spotify.com/v1/users/' + userid + '/playlists?limit=50'
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
-
-            continue
-
-        playlists.extend(r.json()['items'])
-        if r.json()['next'] is None:
-            break
-
-        url = r.json()['next']
-
-    return playlists
+def getUserPlaylists(user):
+    return sp.getUserPlaylists(user)
 
 def getUser(userString):
-    userString = userString.replace('spotify:user:', '')
-    user = getUserFromString(userString)
-    userid = ''
-    if user is not None:
-        userid = user['id'] 
-    else:
-        userid = userString
+    return sp.getUser(userString)
 
-    url = 'https://api.spotify.com/v1/users/' + userid
-    headers = {'Authorization': 'Bearer ' + accessTokenBot()}
-    r = requests.get(url, headers=headers)
-    return r.json()
-
-def getPlaylist(userString, playlistString):
-    playlists = getUserPlaylists(userString)
-    playlistnames = []
-    for s in playlists:
-        playlistnames.append(s['name'])
-
-    namesdemoji = [emoji.demojize(i) for i in playlistnames]
+def getPlaylist(playlists, playlistString):
+    namesdemoji = [emoji.demojize(playlist['name']) for playlist in playlists]
     playlistString = emoji.demojize(playlistString)
     playlist = process.extractOne(playlistString, namesdemoji, score_cutoff=80)
-    playlistName = emoji.emojize(playlist[0])
     if playlist is None:
         print ('Unable to determine playlist')
         return
 
+    playlistName = emoji.emojize(playlist[0])
     for s in playlists:
         if s['name'] == playlistName:
             return s
 
-def getArtistsInPlaylist(s, accessToken, artists, grouped, count):
-    url = s['tracks']['href'] + '?fields=next,items(track(artists))'
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    temp = []
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
+def getTracksFromItem(playlist, tracks):
+    tracks.append(sp.getTracksFromItem(playlist))
 
-            continue
-
-        for p in r.json()['items']:
-            if p is None: 
-                continue
-
-            if grouped:
-                trackartists = ', '.join([i['name'] for i in p['track']['artists']])
-                if count or trackartists not in temp:
-                    temp.append(trackartists)
-            else:
-                for i in p['track']['artists']:
-                    name = i['name']
-                    if count or name not in temp:
-                        temp.append(name)
-
-        if r.json()['next'] is None:
-            artists.extend(temp)
-            break
-
-        url = r.json()['next'] + '?fields=next,items(track(artists))'
-
-def getGenresInPlaylist(s, accessToken, artists):
-    url = s['tracks']['href'] + '?fields=next,items(track(artists))'
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
-
-            continue
-
-        for p in r.json()['items']:
-            if p is None:
-                continue
-
-            for i in p['track']['artists']:
-                if i['id'] is not None and i['id'] not in artists: 
-                    artists.append(i['id'])
-
-        if r.json()['next'] is None:
-            break
-
-        url = r.json()['next'] + '?fields=next,items(track(artists))'
-
-def getSongsInPlaylist(s, accessToken, tracks, name):
-    url = s['tracks']['href'] + '?fields=next,items(track(name,id,artists,popularity,album(name)))'
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
-
-            continue
-
-        for p in r.json()['items']:
-            if p is None or p['track'] is None:
-                continue
-
-            track = p['track']
-            tracks.append(track['id'])
-            artists = [i['name'] for i in track['artists']]
-            name[track['id']] = 'Title: ' + track['name'] + '    Artists: ' + ', '.join(artists) + '     Album: ' + track['album']['name'] + '  Popularity: ' + str(track['popularity'])
-        if r.json()['next'] is None:
-            break
-
-        url = r.json()['next'] + '?fields=next,items(track(name,id,artists,album(name)))'
-
-def getSongsPlaylist(s, accessToken):
-    if "Past 4 Weeks" in s['name']:
+def getSongsPlaylist(playlist):
+    if "Past 4 Weeks" in playlist['name']:
         directory = 'month'
-    elif "Past 6 Months" in s['name']:
+    elif "Past 6 Months" in playlist['name']:
         directory = '6month'
-    elif "All-Time" in s['name']:
+    elif "All-Time" in playlist['name']:
         directory = 'all'
     else:
         return
 
-    match = re.search(r'\d{1,2}/\d{1,2}/\d{4}', s['name'])
+    match = re.search(r'\d{1,2}/\d{1,2}/\d{4}', playlist['name'])
     if match is None:
-        print(s['name'])
+        print(playlist['name'])
         return
 
     date = datetime.datetime.strptime(match.group(), '%m/%d/%Y').date()
     filename = date.strftime('%Y-%m-%d')
     print(directory + '     ' + filename + ' found')
-    url = s['tracks']['href'] + '?fields=next,items(track(name))'
-    name = []
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
-
-            continue
-
-        for p in r.json()['items']:
-            name.append(p['track']['name'])
-
-        if r.json()['next'] is None:
-            break
-
-        url = r.json()['next'] + '?fields=next,items(track(name))'
-
+    tracks = sp.getTracksFromItem(playlist)
+    name = [track['track']['name'] for track in tracks]
     filtered = [i for i in name if i]
     print('writing ' + directory + '     ' + filename)
     with open('./topsongs/' + directory + '/' + filename + '.json', 'w') as f:
@@ -189,96 +63,57 @@ def getSongsPlaylist(s, accessToken):
 
 def topArtistsInPlaylists(userString, count=False, grouped=False):
     user = getUser(userString)
-    playlists = getUserPlaylists(userString)
-    accessToken = accessTokenBot()
-    artists = []
+    if user is None:
+        return 
+
+    playlists = getUserPlaylists(user)
+    trackss = []
     threads = []
-    for s in playlists:
-        if count and s['name'] in ignore:
+    for playlist in playlists:
+        if count and playlist['name'] in ignore:
             continue
 
-        if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
+        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
             continue
 
-        x = threading.Thread(target=getArtistsInPlaylist, args=(s, accessToken, artists, grouped, count))
+        x = threading.Thread(target=getTracksFromItem, args=(playlist, trackss,))
         threads.append(x)
         x.start()
 
-
-    for index, thread in enumerate(threads):
+    for thread in threads:
         thread.join()
 
-    counted = {i:artists.count(i) for i in artists}
-    if None in list(counted.keys()):
-        del counted[None]
+    artists = []
+    for tracks in trackss:
+        if grouped:
+            temp = [', '.join([artist['name'] for artist in track['track']['artists']]) for tracks in trackss for track in tracks]
+        else:
+            temp = [artist['name'] for track in tracks for artist in track['track']['artists']]
 
-    sortedCount = sorted(list(counted.items()), key=operator.itemgetter(1), reverse=True)
-    t = './sortedArtists'
-    if count:
-        t += 'Count.json'
-    else:
-        t += '.json'
+        if not count:
+            temp = list(set(temp))
+
+        artists.extend(temp)
         
-    with open(t, 'w') as f:
-        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
+    count = {i:artists.count(i) for i in artists}
+    if None in list(count.keys()):
+        del count[None]
 
+    sortedCount = sorted(list(count.items()), key=operator.itemgetter(1), reverse=True)
     return sortedCount
 
 def topArtistsInPlaylist(userString, playlistString, grouped=False):
-    playlist = getPlaylist(userString, playlistString)
-    accessToken = accessTokenBot()
-    artists = []
-    getArtistsInPlaylist(playlist, accessToken, artists, grouped, True)
+    playlist = getPlaylist(getUserPlaylists(getUser(userString)), playlistString)
+    tracks = sp.getTracksFromItem(playlist)
+    if grouped:
+        artists = [', '.join([artist['name'] for artist in track['track']['artists']]) for track in tracks]
+    else:
+        artists = [artist['name'] for track in tracks for artist in track['track']['artists']]
     count = {i:artists.count(i) for i in artists} 
     if None in list(count.keys()):
         del count[None]
 
     sortedCount = sorted(list(count.items()), key=operator.itemgetter(1), reverse=True)
-    with open('./sortedArtistsCount.json', 'w') as f:
-        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
-
-    return sortedCount
-
-def topArtistsInPlaylisthref(playlisthref, grouped=False):
-    accessToken = accessTokenBot()
-    url = playlisthref + '?fields=next,items(track(artists))'
-    artists = []
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
-
-            continue
-
-        for p in r.json()['items']:
-            if p is None:
-                continue
-
-            if grouped:
-                trackartists = []
-                for i in p['track']['artists']:
-                    trackartists.append(i['name'])
-
-                artists.append(', '.join(trackartists))
-            else:
-                for i in p['track']['artists']:
-                    artists.append(i['name'])
-
-        if r.json()['next'] is None:
-            break
-
-        url = r.json()['next'] + '?fields=next,items(track(artists))'
-
-    count = {i:artists.count(i) for i in artists} 
-    if None in list(count.keys()):
-        del count[None]
-
-    sortedCount = sorted(list(count.items()), key=operator.itemgetter(1), reverse=True)
-    with open('./sortedArtistsCount.json', 'w') as f:
-        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
-
     return sortedCount
 
 def topGenresInPlaylists(userString):
@@ -286,81 +121,42 @@ def topGenresInPlaylists(userString):
     if user is None:
         return
 
-    playlists = getUserPlaylists(userString)
-    accessToken = accessTokenBot()
-    artists  = []
+    playlists = getUserPlaylists(user)
+    trackss = []
     threads = []
-    for s in playlists:
-        if "Top Songs of " in s['name'] or user['id'] != s['owner']['id'] or s['name'] in ignore:
+    for playlist in playlists:
+        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore:
             continue
 
-        x = threading.Thread(target=getGenresInPlaylist, args=(s, accessToken, artists,))
+        x = threading.Thread(target=getTracksFromItem, args=(playlist, trackss,))
         threads.append(x)
         x.start()
 
-
-    for index, thread in enumerate(threads):
+    for thread in threads:
         thread.join()
 
-    genres = []
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    for i in range(0, len(artists), 50):
-        r = ''
-        while True:
-            url = 'https://api.spotify.com/v1/artists/?ids=' + ','.join(artists[i:i + 50])
-            r = requests.get(url, headers=headers)
-            if r.status_code != 200:
-                if r.status_code == 429:
-                    time.sleep(float(r.headers['Retry-After']))
-
-            else:
-                break
-
-        for j in r.json()['artists']:
-            for k in j['genres']:
-                genres.append(k)
-
+    artistids = [artist['id'] for tracks in trackss for track in tracks for artist in track['track']['artists']]
+    artistids = list(filter(None.__ne__, artistids))
+    artists = sp.getArtistsFromIds(artistids)
+    genres = [genre for artist in artists for genre in artist['genres']]
     count = {i:genres.count(i) for i in genres}
     if None in list(count.keys()):
         del count[None]
 
     sortedCount = sorted(list(count.items()), key=operator.itemgetter(1), reverse=True)
-    with open('./sortedGenreCount.json', 'w') as f:
-        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
-
     return sortedCount
 
 def topGenresInPlaylist(userString, playlistString):
-    playlist = getPlaylist(userString, playlistString)
-    accessToken = accessTokenBot()
-    artists = []
-    getGenresInPlaylist(playlist, accessToken, artists)
-    genres = []
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    for i in range(0, len(artists), 50):
-        r = ''
-        while True:
-            url = 'https://api.spotify.com/v1/artists/?ids=' + ','.join(artists[i:i + 50])
-            r = requests.get(url, headers=headers)
-            if r.status_code != 200:
-                if r.status_code == 429:
-                    time.sleep(float(r.headers['Retry-After']))
-
-            else:
-                break
-
-        for j in r.json()['artists']:
-            for k in j['genres']:
-                genres.append(k)
-
+    playlist = getPlaylist(getUserPlaylists(getUser(userString)), playlistString)
+    tracks = sp.getTracksFromItem(playlist)
+    artistids = [artist['id'] for track in tracks for artist in track['track']['artists']]
+    artists = sp.getArtistsFromIds(artistids)
+    genres = [genre for artist in artists for genre in artist['genres']]
     count = {i:genres.count(i) for i in genres}
     if None in list(count.keys()):
         del count[None]
 
     sortedCount = sorted(list(count.items()), key=operator.itemgetter(1), reverse=True)
-    with open('./sortedGenreCount.json', 'w') as f:
-        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
-
     return sortedCount
 
 def topSongsInPlaylists(userString):
@@ -368,170 +164,84 @@ def topSongsInPlaylists(userString):
     if user is None:
         return
 
-    playlists = getUserPlaylists(userString)
-    accessToken = accessTokenBot()
-    tracks = []
-    name = {}
+    playlists = getUserPlaylists(user)
+    trackss = []
     threads = []
-    for s in playlists:
-        if "Top Songs of " in s['name'] or user['id'] != s['owner']['id'] or s['name'] in ignore or "Common Songs " in s['name']:
+    for playlist in playlists:
+        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore or "Common Songs " in playlist['name']:
             continue
 
-        x = threading.Thread(target=getSongsInPlaylist, args=(s, accessToken, tracks, name))
+        x = threading.Thread(target=getTracksFromItem, args=(playlist, trackss,))
         threads.append(x)
         x.start()
 
-
-    for index, thread in enumerate(threads):
+    for thread in threads:
         thread.join()
 
-    if None in list(name.keys()):
-        del name[None]
+    trackids = []
+    trackinfo = {}
+    for tracks in trackss:
+        for track in tracks:
+            iid = track['track']['id']
+            trackids.append(iid)
+            trackinfo[iid] = {'Name': track['track']['name'],
+                              'Artists': [artist['name'] for artist in track['track']['artists']],
+                              'Album': track['track']['album']['name'],
+                              'Popularity': track['track']['popularity']}
 
-    count = {i:tracks.count(i) for i in tracks} 
+    trackids = list(filter(None.__ne__, trackids))
+    if None in list(trackinfo.keys()):
+        del trackinfo[None]
+
+    count = {i:trackids.count(i) for i in trackids} 
     if None in list(count.keys()):
         del count[None]
 
-    nameCount = {name[key] : value for key, value in list(count.items()) }
-    sortedName = sorted(list(nameCount.items()), key=operator.itemgetter(1), reverse=True)
-    sortedCount = sorted(list(count.items()), key=operator.itemgetter(1), reverse=True)
-    with open('./sortedCount.json', 'w') as f:
-        json.dump(sortedName, f, indent=4, separators=(', ', ': '))
-
-    return tracks
+    infoCount = [(trackinfo[k], v) for k, v in list(count.items())]
+    sortedName = sorted(infoCount, key=operator.itemgetter(1), reverse=True)
+    return sortedName
 
 def topSongsPlaylists(userString):
-    playlists = getUserPlaylists(userString)
-    accessToken = accessTokenBot()
+    user = getUser(userString)
+    playlists = getUserPlaylists(user)
     threads = []
-    for s in playlists:
-        if "Top Songs of " not in s['name']:
+    for playlist in playlists:
+        if "Top Songs of " not in playlist['name']:
             continue
 
-        x = threading.Thread(target=getSongsPlaylist, args=(s, accessToken))
+        x = threading.Thread(target=getSongsPlaylist, args=(playlist,))
         threads.append(x)
         x.start()
 
-
-    for index, thread in enumerate(threads):
+    for thread in threads:
         thread.join()
 
 def topArtists(userString, term='long_term'):
     user = getUserFromString(userString)
-    accessToken = accessTokenForUser(user)
-    url = 'https://api.spotify.com/v1/me/top/artists?limit=50&time_range=' + term
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    r = requests.get(url, headers=headers)
-    artists = []
-    for i in r.json()['items']:
-        artists.append(i['name'])
-
-    with open('./topArtists.json', 'w') as f:
-        json.dump(artists, f, indent=4, separators=(', ', ': '))
-    return artists
+    userobj = getAuthUser(user)
+    return [artist['name'] for artist in userobj.getTopArtists(term, limit=50)['items']]
 
 def songPopularity(userString, playlistString):
-    playlist = getPlaylist(userString, playlistString)
-    accessToken = accessTokenBot()
-    popularity = []
-    name = {}
-    url = playlist['tracks']['href'] + '?fields=next,items(track(name,id,artists,popularity,album(name)))'
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
+    user = getUser(userString)
+    playlist = getPlaylist(getUserPlaylists(user), playlistString)
+    tracks = sp.getTracksFromItem(playlist)
+    trackinfo = [{'Name': track['track']['name'],
+                      'Artists': [artist['name'] for artist in track['track']['artists']],
+                      'Album': track['track']['album']['name'],
+                      'Popularity': track['track']['popularity']} for track in tracks]
 
-            continue
-
-        for p in r.json()['items']:
-            if p is None:
-                continue
-
-            popularity.append(p['track']['popularity'])
-            artists = []
-            for i in p['track']['artists']:
-                artists.append(i['name'])
-
-            name['Title: ' + p['track']['name'] + '    Artists: ' + ', '.join(artists) + '     Album: ' + p['track']['album']['name']] = p['track']['popularity']
-        if r.json()['next'] is None:
-            break
-
-        url = r.json()['next'] + '?fields=next,items(track(name,id,artists,album(name)))'
-
-    sortedCount = sorted(list(name.items()), key=operator.itemgetter(1), reverse=True)
-    with open('./songPopularity.json', 'w') as f:
-        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
-
-    return sortedCount
-
-def songPopularityhref(playlisthref):
-    accessToken = accessTokenBot()
-    popularity = []
-    name = {}
-    url = playlisthref + '?fields=next,items(track(name,id,artists,popularity,album(name)))'
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
-
-            continue
-
-        for p in r.json()['items']:
-            if p is None:
-                continue
-
-            popularity.append(p['track']['popularity'])
-            artists = []
-            for i in p['track']['artists']:
-                artists.append(i['name'])
-
-            name['Title: ' + p['track']['name'] + '    Artists: ' + ', '.join(artists) + '     Album: ' + p['track']['album']['name']] = p['track']['popularity']
-        if r.json()['next'] is None:
-            break
-
-        url = r.json()['next'] + '?fields=next,items(track(name,id,artists,album(name)))'
-
-    sortedCount = sorted(list(name.items()), key=operator.itemgetter(1), reverse=True)
-    with open('./songPopularity.json', 'w') as f:
-        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
-
+    sortedCount = sorted(trackinfo, key=operator.itemgetter('Popularity'), reverse=True)
     return sortedCount
 
 def playlistRepeats(userString, playlistString):
-    playlist = getPlaylist(userString, playlistString)
-    accessToken = accessTokenBot()
+    playlist = getPlaylist(getUserPlaylists(getUser(userString)), playlistString)
     results = []
-    playlistRepeatsthread(playlist, accessToken, results)
+    playlistRepeatsthread(playlist, results)
     return results
 
-def playlistRepeatsthread(playlist, accessToken, results):
-    url = playlist['tracks']['href'] + '?fields=next,items(track(name,artists(name)))'
-    name = []
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
-
-            continue
-
-        for p in r.json()['items']:
-            if p is None or p['track'] is None:
-                continue
-
-            track = p['track']
-            artists = [i['name'] for i in track['artists']]
-            name.append('Title: ' + track['name'] + '    Artists: ' + ', '.join(artists))
-        if r.json()['next'] is None:
-            break
-
-        url = r.json()['next']
-
+def playlistRepeatsthread(playlist, results):
+    tracks = sp.getTracksFromItem(playlist)
+    name = [track['track']['name'] + ','.join([artist['name'] for artist in track['track']['artist']]) for track in tracks]
     while None in name:
         name.remove(None)
 
@@ -540,16 +250,15 @@ def playlistRepeatsthread(playlist, accessToken, results):
         results.append((playlist['name'], result))
 
 def playlistRepeatsAll(userString):
-    playlists = getUserPlaylists(userString)
     user = getUser(userString)
-    accessToken = accessTokenBot()
+    playlists = getUserPlaylists(user)
     results = []
     threads = []
-    for i in playlists:
-        if "Top Songs of " in i['name'] or user['id'] != i['owner']['id']:
+    for playlist in playlists:
+        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
             continue
 
-        x = threading.Thread(target=playlistRepeatsthread, args=(i, accessToken, results))
+        x = threading.Thread(target=playlistRepeatsthread, args=(playlist, results))
         threads.append(x)
         x.start()
 
@@ -571,30 +280,31 @@ def findRepeats(L):
     return list(seen2)
 
 def ratio(userString = 'firiusbob', playlistString = 'Random Pool of Stuff'):
-    playlist = getPlaylist(userString, playlistString)
-    accessToken = accessTokenBot()
-    artists = []
-    getArtistsInPlaylist(playlist, accessToken, artists, False)
+    user = getUser(userString)
+    playlists = getUserPlaylists(user)
+    playlist = getPlaylist(playlists, playlistString)
+    tracks = sp.getTracksFromItem(playlist)
+    artists = [artist['name'] for track in tracks for artist in track['track']['artists']]
     countplaylist = {i:artists.count(i) for i in artists} 
     if None in list(countplaylist.keys()):
         del countplaylist[None]
 
-    user = getUser(userString)
-    playlists = getUserPlaylists(userString)
-    accessToken = accessTokenBot()
-    artists = []
+    trackss = []
     threads = []
-    for s in playlists:
-        if "Top Songs of " in s['name'] or user['id'] != s['owner']['id'] or s['name'] in ignore:
+    for playlist in playlists:
+        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore:
             continue
 
-        x = threading.Thread(target=getArtistsInPlaylist, args=(s, accessToken, artists, False))
+        x = threading.Thread(target=getTracksFromItem, args=(playlist, trackss,))
         threads.append(x)
         x.start()
 
-
-    for index, thread in enumerate(threads):
+    for thread in threads:
         thread.join()
+
+    artists = []
+    for tracks in trackss:
+        artists.extend([artist['name'] for track in tracks for artist in track['track']['artists']])
 
     count = {i:artists.count(i) for i in artists}
     if None in list(count.keys()):
@@ -611,473 +321,263 @@ def ratio(userString = 'firiusbob', playlistString = 'Random Pool of Stuff'):
         ratio[i] = allNumber / poolNumber
 
     sortedCount = sorted(list(ratio.items()), key=operator.itemgetter(1), reverse=True)
-    with open('./sortedRatioCount.json', 'w') as f:
-        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
-
     return sortedCount
 
-def findSongInPlayliststhread(s, accessToken, playlist, songId):
-    url = s['tracks']['href'] + '?fields=next,items(track(id))'
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
-
-            continue
-
-        for p in r.json()['items']:
-            if p is None or p['track'] is None:
-                continue
-
-            if songId == p['track']['id']:
-                playlist.append(s['name'])
-                return
-
-        if r.json()['next'] is None:
-            break
-
-        url = r.json()['next'] + '?fields=next,items(track(id))'
+def findSongInPlayliststhread(playlist, results, songId):
+    tracks = sp.getTracksFromItem(playlist)
+    ids = [track['track']['id'] for track in tracks]
+    if songId in ids:
+        results.append(playlist['name'])
 
 def findSongInPlaylists(userString, songId):
     user = getUser(userString)
-    songId = songId.replace('spotify:track:', '')
     if user is None:
         return
 
-    playlists = getUserPlaylists(userString)
-    accessToken = accessTokenBot()
-    playlist = []
+    songId = songId.replace('spotify:track:', '')
+    playlists = getUserPlaylists(user)
+    results = []
     threads = []
-    for s in playlists:
-        if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
+    for playlist in playlists:
+        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
             continue
 
-        x = threading.Thread(target=findSongInPlayliststhread, args=(s, accessToken, playlist, songId))
+        x = threading.Thread(target=findSongInPlayliststhread, args=(playlist, results, songId))
         threads.append(x)
         x.start()
 
-
-    for index, thread in enumerate(threads):
+    for thread in threads:
         thread.join()
 
-    with open('./songInPlaylists.json', 'w') as f:
-        json.dump(playlist, f, indent=4, separators=(', ', ': '))
+    return results
 
-    return playlist
-
-def findArtistInPlayliststhread(s, accessToken, playlist, artistId):
-    url = s['tracks']['href'] + '?fields=next,items(track(artists, name))'
-    headers = {'Authorization': 'Bearer ' + accessToken}
+def findArtistInPlayliststhread(playlist, results, artistId):
+    tracks = sp.getTracksFromItem(playlist)
+    data = [(track['track']['name'], [artist['id'] for artist in track['track']['artists']]) for track in tracks]
     temp = []
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
+    for i, j in data:
+        if artistId in j:
+            temp.append(i)
 
-            continue
-
-        for p in r.json()['items']:
-            if p is None or p['track'] is None:
-                continue
-
-            for j in p['track']['artists']:
-                if artistId == j['id']:
-                    temp.append(p['track']['name'])
-
-        if r.json()['next'] is None:
-            if temp:
-                playlist.append((s['name'], temp))
-
-            break
-
-        url = r.json()['next'] + '?fields=next,items(track(artists))'
+    if temp:
+        results.append((playlist['name'], temp))
 
 def findArtistInPlaylists(userString, artistId):
     user = getUser(userString)
-    artistId = artistId.replace('spotify:artist:', '')
     if user is None:
         return
 
-    playlists = getUserPlaylists(userString)
-    accessToken = accessTokenBot()
-    playlist = []
+    artistId = artistId.replace('spotify:artist:', '')
+    playlists = getUserPlaylists(user)
+    results = []
     threads = []
-    for s in playlists:
-        if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
+    for playlist in playlists:
+        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
             continue
 
-        x = threading.Thread(target=findArtistInPlayliststhread, args=(s, accessToken, playlist, artistId))
+        x = threading.Thread(target=findArtistInPlayliststhread, args=(playlist, results, artistId))
         threads.append(x)
         x.start()
 
-
-    for index, thread in enumerate(threads):
+    for thread in threads:
         thread.join()
 
-    with open('./artistInPlaylists.json', 'w') as f:
-        json.dump(playlist, f, indent=4, separators=(', ', ': '))
-
-    return playlist
+    return results
 
 def search(string, kind):
     string = string.replace(' ', '%20')
-    url = 'https://api.spotify.com/v1/search?q=' + string + '&type=' + kind
-    headers = {'Authorization': 'Bearer ' + accessTokenBot()}
-    r = requests.get(url, headers=headers)
-    return [(i['name'], i['id']) for i in r.json()[kind + 's']['items']] 
+    return [(i['name'], i['id']) for i in sp.search(string, kind)[kind + 's']['items']] 
 
 def searchRPOS(song):
     song = song.lower()
     song = song.translate({ord(i): None for i in ':&()'})
     song = song.split('feat.', 1)[0]
     song = song.split('-', 1)[0]
-    user = getUserFromString('firiusbob')
-    accessToken = accessTokenForUser(user)
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks?fields=next,items(track(artists(name),id,name))'
+    playlist = sp.getPlaylistFromId('5WYRn0FxSUhVsOQpQQ0xBV')
+    tracks = sp.getTracksFromItem(playlist)
     results = []
     print('Searching RPOS...')
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
-    
+    for track in tracks:
+        if track is None or track['track'] is None:
             continue
-    
-        for p in r.json()['items']:
-            if p is None or p['track'] is None:
-                continue
 
-            test = p['track']['name'].lower()
-            test = test.translate({ord(i): None for i in ':&()'})
-            test = test.split('feat.', 1)[0]
-            test = test.split('-', 1)[0]
-            if fuzz.partial_ratio(song, test) > 98 and fuzz.ratio(song, test) > 45:
-                diff = len(test) - len(song)
-                if diff < 100 and diff >= 0:
-                    artists = [j['name'] for j in p['track']['artists']]
-                    results.append((p['track']['name'], artists, p['track']['id']))
-    
-        if r.json()['next'] is None:
-            break
-    
-        url = r.json()['next'] + '?fields=next,items(track(id,artists(name),name))'
+        test = track['track']['name'].lower()
+        test = test.translate({ord(i): None for i in ':&()'})
+        test = test.split('feat.', 1)[0]
+        test = test.split('-', 1)[0]
+        if fuzz.partial_ratio(song, test) > 98 and fuzz.ratio(song, test) > 45:
+            diff = len(test) - len(song)
+            if diff < 100 and diff >= 0:
+                results.append((track['track']['name'], [artist['name'] for artist in track['track']['artists']], track['track']['id']))
     
     return results
 
-def searchPlayliststhread(s, accessToken, songhrefs, song):
-    url = s['tracks']['href'] + '?fields=next,items(track(name,href))'
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
-
+def searchPlayliststhread(playlist, songids, song):
+    tracks = sp.getTracksFromItem(playlist)
+    for track in tracks:
+        if track is None or track['track'] is None:
             continue
 
-        for p in r.json()['items']:
-            track = p['track']
-            if p is None or track is None or track['href'] in songhrefs:
-                continue
-
-            test = track['name'].lower()
-            test = re.sub("[\(\[].*?[\)\]]", "", test)
-            test = test.split('feat.', 1)[0]
-            if fuzz.partial_ratio(song, test) > 98 and fuzz.ratio(song, test) > 45:
-                diff = len(test) - len(song)
-                if diff < 100 and diff >= 0:
-                    songhrefs.append(track['href'])
-
-        if r.json()['next'] is None:
-            break
-
-        url = r.json()['next'] + '?fields=next,items(track(name,href))'
+        test = track['track']['name'].lower()
+        test = test.translate({ord(i): None for i in ':&()'})
+        test = test.split('feat.', 1)[0]
+        test = test.split('-', 1)[0]
+        if fuzz.partial_ratio(song, test) > 98 and fuzz.ratio(song, test) > 45:
+            diff = len(test) - len(song)
+            if diff < 100 and diff >= 0:
+                songids.append(track['track']['id'])
 
 def searchPlaylists(userString, song):
     song = song.lower()
-    song = re.sub("[\(\[].*?[\)\]]", "", song)
+    song = song.translate({ord(i): None for i in ':&()'})
     song = song.split('feat.', 1)[0]
+    song = song.split('-', 1)[0]
     user = getUser(userString)
     if user is None:
         return
 
-    playlists = getUserPlaylists(userString)
-    accessToken = accessTokenBot()
-    songhrefs = []
+    playlists = getUserPlaylists(user)
+    songids = []
     threads = []
-    for s in playlists:
-        if "Top Songs of " in s['name'] or user['id'] != s['owner']['id']:
+    for playlist in playlists:
+        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
             continue
 
-        x = threading.Thread(target=searchPlayliststhread, args=(s, accessToken, songhrefs, song))
+        x = threading.Thread(target=searchPlayliststhread, args=(playlist, songids, song))
         threads.append(x)
         x.start()
 
-
-    for index, thread in enumerate(threads):
+    for thread in threads:
         thread.join()
 
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    songs = []
-    for i in songhrefs:
-        r = requests.get(i, headers=headers)
-        artists = [i['name'] for i in r.json()['artists']]
-        songs.append((r.json()['id'], r.json()['name'], artists, r.json()['album']['name']))
+    songids = list(set(songids))
+    tracks = sp.getTracksFromIds(songids)
+    results = [(track['name'], [artist['name'] for artist in track['artists']], track['id'], track['album']['name']) for track in tracks]
+    return results
 
-    return songs
-
-def convertThread(newuris, rpos, name, artists, uri):
-    for i in rpos:
-        if name != i[1]:
-            continue
-
-        flag = True
-        for p in artists:
-            if p not in i[2]:
-                flag = False
-                break
-
-        if flag:
-            newuris.append(i[0])
+def convertThread(track, name, artists, rposdata, uris):
+    for i in rposdata:
+        if name == i[0] and set(artists) == set(i[1]):
+            uris.append(i[2])
             return
 
     print(name)
-    newuris.append(uri)
+    uris.append(track['track']['uri'])
 
 def convert(playlistString):
-    playlist = getPlaylist('firiusbob', playlistString)
     user = getUserFromString('firiusbob')
-    accessToken = accessTokenForUser(user)
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks?fields=next,items(track(artists(name),uri,name))'
-    rpos = []
+    rposplaylist = sp.getPlaylistFromId('5WYRn0FxSUhVsOQpQQ0xBV')
     print('Pulling from RPOS')
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
-    
-            continue
-    
-        for p in r.json()['items']:
-            if p is None or p['track'] is None:
-                continue
-    
-            artists = []
-            for i in p['track']['artists']:
-                artists.append(i['name'])
-    
-            rpos.append([p['track']['uri'], p['track']['name'], artists])
-    
-        if r.json()['next'] is None:
-            break
-    
-        url = r.json()['next'] + '?fields=next,items(track(uri,artists(name),name))'
-    
+    rpostracks = sp.getTracksFromItem(rposplaylist)
+    rposdata = [(track['track']['name'], [artist['name'] for artist in track['track']['artists']], track['track']['uri']) for track in rpostracks]
     print('Finished pulling from RPOS. Searching...')
-    url = playlist['tracks']['href'] + '?fields=next,items(track(artists(name),name,uri))'
-    newuris = []
+    playlist = getPlaylist(getUserPlaylists(user), playlistString)
+    tracks = sp.getTracksFromItem(playlist)
+    uris = []
     threads = []
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
-    
-            continue
-    
-        for p in r.json()['items']:
-            if p is None or p['track'] is None:
-                continue
-    
-            name = p['track']['name']
-            artists = []
-            uri = p['track']['uri']
-            for i in p['track']['artists']:
-                artists.append(i['name'])
-    
-            x = threading.Thread(target=convertThread, args=(newuris, rpos, name, artists, uri))
-            threads.append(x)
-            x.start()
-    
-        if r.json()['next'] is None:
-            break
-    
-        url = r.json()['next'] + '?fields=next,items(track(artists(name),name))'
-    
-    for index, thread in enumerate(threads):
-        thread.join()
-    
-    print('Finished search. Creating playlist')
-    payload = json.dumps({'name': 'Convert of ' + playlist['name']})
-    url = createPlaylist(user['id'], accessToken, payload) + '/tracks'
-    print('Finished. Adding to playlist')
-    headers = {'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json'}
-    for i in range(0, len(newuris), 100):
-        r = requests.post(url, headers=headers, data=json.dumps({'uris': newuris[i:i + 100]}))
-
-def notinRPOS(playlistString):
-    playlist = getPlaylist('firiusbob', playlistString)
-    user = getUserFromString('firiusbob')
-    accessToken = accessTokenForUser(user)
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks?fields=next,items(track(id))'
-    rpos = []
-    print('Pulling from RPOS')
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
-    
-            continue
-    
-        for p in r.json()['items']:
-            if p is None or p['track'] is None or p['track']['id'] is None:
-                continue
-    
-            rpos.append(p['track']['id'])
-    
-        if r.json()['next'] is None:
-            break
-    
-        url = r.json()['next'] + '?fields=next,items(track(id))'
-    
-    print('Finished pulling from RPOS. Comparing...')
-    url  = playlist['tracks']['href'] + '?fields=next,items(track(artists(name),name,id))'
-    results = []
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code != 200:
-            if r.status_code == 429:
-                time.sleep(float(r.headers['Retry-After']))
-    
-            continue
-    
-        for p in r.json()['items']:
-            if p is None or p['track'] is None:
-                continue
-
-            if p['track']['id'] not in rpos:
-                artists = [i['name'] for i in p['track']['artists']]
-                results.append((p['track']['name'], artists, p['track']['id']))
-    
-    
-        if r.json()['next'] is None:
-            break
-    
-        url = r.json()['next'] + '?fields=next,items(track(artists(name),name))'
-
-    return results
-
-def playlistFollowersThread(nameids, followers, accessToken):
-    url = 'https://api.spotify.com/v1/playlists/' + nameids[1] + '?fields=followers(total)'
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    while True:
-        r = requests.get(url, headers=headers) 
-        if r.status_code == 200:
-            followers.append((nameids[0], r.json()['followers']['total']))
-            return
-
-        elif r.status_code == 429:
-            time.sleep(float(r.headers['Retry-After']))
-
-def playlistFollowers(userString):
-    playlists = getUserPlaylists(userString)
-    user = getUser(userString)
-    nameids = []
-    for s in playlists:
-        nameids.append((s['name'], s['id'], s['owner']['id']))
-
-    accessToken = accessTokenBot()
-    followers = []
-    threads = []
-    for i in nameids:
-        if i[0] in ignore or "Top Songs of " in i[0] or user['id'] != i[2]:
+    for track in tracks:
+        if track is None or track['track'] is None:
             continue
 
-        x = threading.Thread(target=playlistFollowersThread, args=(i, followers, accessToken))
+        name = track['track']['name']
+        artists = [artist['name'] for artist in track['track']['artists']]
+        x = threading.Thread(target=convertThread, args=(track, name, artists, rposdata, uris,))
         threads.append(x)
         x.start()
 
-    for index, thread in enumerate(threads):
+    for thread in threads:
+        thread.join()
+
+    print('Finished search. Creating playlist')
+    userobj = getAuthUser(user)
+    newplaylist = userobj.createPlaylist('Convert of ' + playlist['name'])
+    print('Finished. Adding to playlist')
+    userobj.addSongsToPlaylist(newplaylist['id'], uris)
+
+def notinRPOS(playlistString):
+    user = getUser('firiusbob')
+    rposplaylist = sp.getPlaylistFromId('5WYRn0FxSUhVsOQpQQ0xBV')
+    print('Pulling from RPOS')
+    rpostracks = sp.getTracksFromItem(rposplaylist)
+    rposids = [track['track']['id'] for track in rpostracks]
+    print('Finished pulling from RPOS. Comparing...')
+    playlist = getPlaylist(getUserPlaylists(user), playlistString)
+    tracks = sp.getTracksFromItem(playlist)
+    results = [track for track in tracks if track['track']['id'] not in rposids]
+    return [(track['track']['name'], [artist['name'] for artist in track['track']['artists']], track['track']['id']) for track in results]
+
+def playlistFollowersThread(playlist, followers):
+    playlistdata = sp.getPlaylistFromId(playlist['id'])
+    followers.append((playlistdata['name'], playlistdata['followers']['total']))
+
+def playlistFollowers(userString):
+    user = getUser(userString)
+    playlists = getUserPlaylists(user)
+    followers = []
+    threads = []
+    for playlist in playlists:
+        name = playlist['name']
+        ownerid = playlist['owner']['id']
+        if name not in ignore and "Top Songs of " not in name and ownerid == user['id']:
+            x = threading.Thread(target=playlistFollowersThread, args=(playlist, followers,))
+            threads.append(x)
+            x.start()
+
+    for thread in threads:
         thread.join()
 
     sortedCount = sorted(followers, key=operator.itemgetter(1), reverse=True)
-    with open('sortedPlaylistFollowers.json', 'w') as f:
-        json.dump(sortedCount, f, indent=4, separators=(', ', ': '))
-
     return sortedCount
 
-def commonSongsUsers(*users):
+def commonSongsUsers(*userids):
     refreshtoken = 'AQAcsVCKBnutCWVRPih8OsU1ScZRFjPTePJNaY0GSehMefJmFdscQlGeGuIoU4fAfZ0rkOrx2SCOW3zVMEt3zKJG0mt2yBgKJwilvgCdoZ-ftJBh6AK1PjNVOPWlbbb6vFs'
-    user = {'refresh_token': refreshtoken}
+    botuser = sp.getAuthUser(refreshtoken)
     print('Pulling songs...')
-    ids = []
-    for i in users:
-        ids.append(topSongsInPlaylists(i))
+    tracksss = []
+    for userid in userids:
+        user = getUser(userid)
+        playlists = getUserPlaylists(user)
+        threads = []
+        trackss = []
+        for playlist in playlists:
+            x = threading.Thread(target=getTracksFromItem, args=(playlist, trackss,))
+            threads.append(x)
+            x.start()
+
+        for thread in threads:
+            thread.join()
+
+        tracksss.append(trackss)
 
     print('Finding common songs...')
-    commonids = set(ids[0])
-    for i in ids[1:]:
-        commonids.intersection_update(i)
+    trackuri = []
+    for trackss in tracksss:
+        trackuri.append([track['track']['uri'] for tracks in trackss for track in tracks])
 
-    commonids = [i for i in commonids if i is not None]
-    commonuris = ['spotify:track:' + i for i in commonids]
-    names = [getUser(i)['display_name'] for i in users]
-    payload = json.dumps({'name': 'Common Songs between ' + ' and '.join(names)})
-    accessToken = accessTokenForUser(user)
+    commonuri = set(trackuri[0])
+    for i in trackuri[1:]:
+        commonuri.intersection_update(i)
+
+    commonuri = [i for i in commonuri if i is not None]
+    names = [getUser(i)['display_name'] for i in userids]
+    name = 'Common Songs between ' + ' and '.join(names)
     print('Creating playlist...')
-    playlist = createPlaylist('tr2brpyugxi6yg0pptop4r7tv', accessToken, payload) 
-    url = playlist + '/tracks'
-    headers = {'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json'}
-    print('Populating playlist...')
-    for i in range(0, len(commonuris), 100):
-        r = requests.post(url, headers=headers, data=json.dumps({'uris': commonuris[i:i + 100]}))
-
-    return playlist.replace('https://api.spotify.com/v1/playlists/', 'spotify:playlist:')
-
-def getTracks(ids):
-    url = 'https://api.spotify.com/v1/tracks?ids='
-    accessToken = accessTokenBot()
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    results = []
-    for i in range(0, len(ids), 50):
-        tempurl = url + ','.join(ids[i:i + 50])
-        r = requests.get(tempurl, headers=headers)
-        results.extend(r.json()['tracks'])
-
-    return results
+    playlist = botuser.createPlaylist(name)
+    botuser.addSongsToPlaylist(playlist['id'], commonuri)
+    return playlist['href']
 
 def getAudioFeatures(ids):
-    url = 'https://api.spotify.com/v1/audio-features?ids='
-    accessToken = accessTokenBot()
-    headers = {'Authorization': 'Bearer ' + accessToken}
-    results = []
-    for i in range(0, len(ids), 100):
-        tempurl = url + ','.join(ids[i:i + 100])
-        r = requests.get(tempurl, headers=headers)
-        results.extend(r.json()['audio_features'])
-
-    return results
+    return sp.getAudioFeatures(ids)
 
 def playlistDiff(userString1, playlistString1, userString2, playlistString2):
-    playlist1 = getPlaylist(userString1, playlistString1)
-    playlist2 = getPlaylist(userString2, playlistString2)
-    accessToken = accessTokenBot()
-    tracks1 = []
-    tracks2 = []
-    name = {}
-    getSongsInPlaylist(playlist1, accessToken, tracks1, name)
-    getSongsInPlaylist(playlist2, accessToken, tracks2, name)
-    setplaylist1 = set(tracks1)
-    setplaylist2 = set(tracks2)
+    playlist1 = getPlaylist(getUserPlaylists(getUser(userString1)), playlistString1)
+    playlist2 = getPlaylist(getUserPlaylists(getUser(userString2)), playlistString2)
+    tracks1 = sp.getTracksFromItem(playlist1)
+    tracks2 = sp.getTracksFromItem(playlist2)
+    trackids1 = [track['track']['id'] for track in tracks1]
+    trackids2 = [track['track']['id'] for track in tracks2]
+    setplaylist1 = set(trackids1)
+    setplaylist2 = set(trackids2)
     if None in setplaylist1:
         setplaylist1.remove(None)
 
@@ -1087,43 +587,44 @@ def playlistDiff(userString1, playlistString1, userString2, playlistString2):
     same = list(setplaylist1 & setplaylist2)
     diff1 = list(setplaylist1 - setplaylist2)
     diff2 = list(setplaylist2 - setplaylist1)
-    same = [i['name'] for i in getTracks(same)]
-    diff1 = [i['name'] for i in getTracks(diff1)]
-    diff2 = [i['name'] for i in getTracks(diff2)]
+    same = sp.getTracksFromIds(list(same))
+    diff1 = sp.getTracksFromIds(list(diff1))
+    diff2 = sp.getTracksFromIds(list(diff2))
+    same = [track['name'] for track in same]
+    diff1 = [track['name'] for track in diff1]
+    diff2 = [track['name'] for track in diff2]
     return (same, diff1, diff2)
 
 def checkWd():
     user = getUser('firiusbob')
-    accesstoken = accessTokenBot()
-    playlists = getUserPlaylists('firiusbob')
-    filtered = [i for i in playlists if 'Wd' in i['name']]
-    name = {}
+    playlists = getUserPlaylists(user)
+    filtered = [playlist for playlist in playlists if 'Wd' in playlist['name']]
     wd = []
     subs = []
-    for i in filtered:
-        tracks = []
-        getSongsInPlaylist(i, accesstoken, tracks, name)
-        if i['name'] == 'Weekend (Wd)':
-            wd.extend(tracks)
+    for playlist in filtered:
+        tracks = sp.getTracksFromItem(playlist)
+        if playlist['name'] == 'Weekend (Wd)':
+            wd = [track['track']['id'] for track in tracks]
         else:
-            subs.extend(tracks)
+            subs.extend([track['track']['id'] for track in tracks])
 
     repeats = findRepeats(subs)
     wd = set(wd)
     subs = set(subs)
-    return (list(wd - subs), list(subs - wd), repeats)
+    diff1 = list(wd - subs)
+    diff2 = list(subs - wd)
+    repeats = [track['name'] for track in sp.getTracksFromIds(repeats)]
+    diff1 = [track['name'] for track in sp.getTracksFromIds(diff1)]
+    diff2 = [track['name'] for track in sp.getTracksFromIds(diff2)]
+    return (diff1, diff2, repeats)
 
 def topFeaturesPlaylists():
-    user = 'firiusbob'
-    accessToken = accessTokenForUser(getUserFromString(user))
-    url = 'https://api.spotify.com/v1/playlists/5WYRn0FxSUhVsOQpQQ0xBV/tracks'
-    proxy = {}
-    proxy['tracks'] = {}
-    proxy['tracks']['href'] = url
-    ids = []
-    name = {}
-    getSongsInPlaylist(proxy, accessToken, ids, name)
-    setids = set(ids)
+    user = getUserFromString('firiusbob')
+    userobj = getAuthUser(user)
+    rpos = getPlaylist(userobj.getPlaylists(), 'Random Pool of Stuff')
+    tracks = sp.getTracksFromItem(rpos)
+    trackids = [track['track']['id'] for track in tracks]
+    setids = set(trackids)
     if None in setids:
         setids.remove(None)
 
@@ -1138,18 +639,9 @@ def topFeaturesPlaylists():
     danceuris = [i[0] for i in sorteddance[0:250]]
     energyuris = [i[0] for i in sortedenergy[0:250]]
     valenceuris = [i[0] for i in sortedvalence[0:250]]
-    dancehref = createPlaylist(user, accessToken, json.dumps({'name': 'Top Danceability Songs for ' + user}))
-    energyhref = createPlaylist(user, accessToken, json.dumps({'name': 'Top Energy Songs for ' + user}))
-    valencehref = createPlaylist(user, accessToken, json.dumps({'name': 'Top Valence Songs for ' + user}))
-    danceurl = dancehref + '/tracks'
-    energyurl = energyhref + '/tracks'
-    valenceurl = valencehref + '/tracks'
-    headers = {'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json'}
-    for i in range(0, len(danceuris), 100):
-            r = requests.post(danceurl, headers=headers, data=json.dumps({'uris': danceuris[i:i+100]}))
-
-    for i in range(0, len(energyuris), 100):
-        r = requests.post(energyurl, headers=headers, data=json.dumps({'uris': energyuris[i:i+100]}))
-
-    for i in range(0, len(valenceuris), 100):
-        r = requests.post(valenceurl, headers=headers, data=json.dumps({'uris': valenceuris[i:i+100]}))
+    danceobj = userobj.createPlaylist('Top Danceability Songs for ' + userobj.user['display_name'])
+    energyobj = userobj.createPlaylist('Top Energy Songs for ' + userobj.user['display_name'])
+    valenceobj = userobj.createPlaylist('Top Valence Songs for ' + userobj.user['display_name'])
+    userobj.addSongsToPlaylist(danceobj['id'], danceuris)
+    userobj.addSongsToPlaylist(energyobj['id'], energyuris)
+    userobj.addSongsToPlaylist(valenceobj['id'], valenceuris)
