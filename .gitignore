@@ -6,3 +6,5 @@ Pipfile.lock
 /.vscode/**
 /topsongs/**
 !/topsongs/diff.py
+*.json
+!users.json

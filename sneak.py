@@ -20,6 +20,10 @@ def getUserPlaylists(user):
 def getUser(userString):
     return sp.getUser(userString)
 
+def saveToFile(data, filename):
+    with open(filename, 'w') as f:
+        json.dump(data, f, indent=4, separators=(', ', ': '))
+
 def getPlaylist(playlists, playlistString):
     namesdemoji = [emoji.demojize(playlist['name']) for playlist in playlists]
     playlistString = emoji.demojize(playlistString)
