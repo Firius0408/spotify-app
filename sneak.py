@@ -8,21 +8,96 @@ import sys
 import emoji
 import threading
 import datetime
+import os
 from update import getAuthUser, userFile, sp, refreshtokenme, botuser
 from spotify import getUserFromString
 
 ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'L?', 'IYLHLHG', 'Musical', 'Disney', 'Indie', 'Classical', 'Monstercat', 'Rap', 'House', 'The Beatles', 'Ashley', 'Jonathan', 'Daniel', 'Phillip', 'Shan', 'Pegboard Nerds', 'Drake', 'Hardwell', 'Martin Garrix', 'Maroon 5', 'Taylor Swift', 'Andrea Bocelli', 'Kygo', 'OneRepublic']
 #ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'The Beatles']
 
+users = {}
+userplaylists = {}
+playlisttracks = {}
+files = []
+
+def clearCache():
+    global users, userplaylists, playlisttracks
+    users = {}
+    userplaylists = {}
+    playlisttracks = {}
+
+def refreshCacheUsers(k):
+    users[k] = sp.getUser(k)
+
+def refreshCachePlaylists(k):
+    userplaylists[k] = sp.getUserPlaylists({'id': k})
+
+def refreshCacheTracks(k):
+    playlisttracks[k] = sp.getTracksFromItem({'tracks': {'href': 'https://api.spotify.com/v1/playlists/' + k + '/tracks'}})
+
+def refreshCache():
+    threads = []
+    for k in users.keys():
+        x = threading.Thread(target=refreshCacheUsers, args=(k,))
+        threads.append(x)
+        x.start()
+
+    for k in userplaylists.keys():
+        x = threading.Thread(target=refreshCachePlaylists, args=(k,))
+        threads.append(x)
+        x.start()
+
+    for k in playlisttracks.keys():
+        x = threading.Thread(target=refreshCacheTracks, args=(k,))
+        threads.append(x)
+        x.start()
+
+    for thread in threads:
+        thread.join()
+
 def getUserPlaylists(user):
-    return sp.getUserPlaylists(user)
+    iid = user['id']
+    if iid in userplaylists.keys():
+        return userplaylists[iid]
+    else:
+        temp = sp.getUserPlaylists(user)
+        userplaylists[iid] = temp
+        return temp
 
 def getUser(userString):
-    return sp.getUser(userString)
+    if userString in users.keys():
+        return users[userString]
+    else:
+        temp = sp.getUser(userString)
+        users[userString] = temp
+        return temp
+
+def getTracksFromItem(playlist):
+    iid = playlist['id']
+    if iid in playlisttracks.keys():
+        return playlisttracks[iid]
+    else:
+        temp = sp.getTracksFromItem(playlist)
+        playlisttracks[iid] = temp
+        return temp
+
+def appendTracksFromItem(playlist, tracks):
+    iid = playlist['id']
+    if iid in playlisttracks.keys():
+        tracks.append(playlisttracks[iid])
+    else:
+        temp = sp.getTracksFromItem(playlist)
+        playlisttracks[iid] = temp
+        tracks.append(temp)
 
 def saveToFile(data, filename):
+    files.append(filename)
     with open(filename, 'w') as f:
         json.dump(data, f, indent=4, separators=(', ', ': '))
+
+def clearFiles():
+    for ffile in files:
+        os.remove(ffile)
 
 def getPlaylist(playlists, playlistString):
     namesdemoji = [emoji.demojize(playlist['name']) for playlist in playlists]
@@ -36,9 +111,6 @@ def getPlaylist(playlists, playlistString):
     for s in playlists:
         if s['name'] == playlistName:
             return s
-
-def getTracksFromItem(playlist, tracks):
-    tracks.append(sp.getTracksFromItem(playlist))
 
 def getSongsPlaylist(playlist):
     if "Past 4 Weeks" in playlist['name']:
@@ -58,7 +130,7 @@ def getSongsPlaylist(playlist):
     date = datetime.datetime.strptime(match.group(), '%m/%d/%Y').date()
     filename = date.strftime('%Y-%m-%d')
     print(directory + '     ' + filename + ' found')
-    tracks = sp.getTracksFromItem(playlist)
+    tracks = getTracksFromItem(playlist)
     name = [track['track']['name'] for track in tracks]
     filtered = [i for i in name if i]
     print('writing ' + directory + '     ' + filename)
@@ -80,7 +152,7 @@ def topArtistsInPlaylists(userString, count=False, grouped=False):
         if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
             continue
 
-        x = threading.Thread(target=getTracksFromItem, args=(playlist, trackss,))
+        x = threading.Thread(target=appendTracksFromItem, args=(playlist, trackss,))
         threads.append(x)
         x.start()
 
@@ -108,7 +180,7 @@ def topArtistsInPlaylists(userString, count=False, grouped=False):
 
 def topArtistsInPlaylist(userString, playlistString, grouped=False):
     playlist = getPlaylist(getUserPlaylists(getUser(userString)), playlistString)
-    tracks = sp.getTracksFromItem(playlist)
+    tracks = getTracksFromItem(playlist)
     if grouped:
         artists = [', '.join([artist['name'] for artist in track['track']['artists']]) for track in tracks]
     else:
@@ -132,7 +204,7 @@ def topGenresInPlaylists(userString):
         if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore:
             continue
 
-        x = threading.Thread(target=getTracksFromItem, args=(playlist, trackss,))
+        x = threading.Thread(target=appendTracksFromItem, args=(playlist, trackss,))
         threads.append(x)
         x.start()
 
@@ -152,7 +224,7 @@ def topGenresInPlaylists(userString):
 
 def topGenresInPlaylist(userString, playlistString):
     playlist = getPlaylist(getUserPlaylists(getUser(userString)), playlistString)
-    tracks = sp.getTracksFromItem(playlist)
+    tracks = getTracksFromItem(playlist)
     artistids = [artist['id'] for track in tracks for artist in track['track']['artists']]
     artists = sp.getArtistsFromIds(artistids)
     genres = [genre for artist in artists for genre in artist['genres']]
@@ -175,7 +247,7 @@ def topSongsInPlaylists(userString):
         if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore or "Common Songs " in playlist['name']:
             continue
 
-        x = threading.Thread(target=getTracksFromItem, args=(playlist, trackss,))
+        x = threading.Thread(target=appendTracksFromItem, args=(playlist, trackss,))
         threads.append(x)
         x.start()
 
@@ -228,7 +300,7 @@ def topArtists(userString, term='long_term'):
 def songPopularity(userString, playlistString):
     user = getUser(userString)
     playlist = getPlaylist(getUserPlaylists(user), playlistString)
-    tracks = sp.getTracksFromItem(playlist)
+    tracks = getTracksFromItem(playlist)
     trackinfo = [{'Name': track['track']['name'],
                       'Artists': [artist['name'] for artist in track['track']['artists']],
                       'Album': track['track']['album']['name'],
@@ -244,7 +316,7 @@ def playlistRepeats(userString, playlistString):
     return results
 
 def playlistRepeatsthread(playlist, results):
-    tracks = sp.getTracksFromItem(playlist)
+    tracks = getTracksFromItem(playlist)
     name = [track['track']['name'] + ','.join([artist['name'] for artist in track['track']['artist']]) for track in tracks]
     while None in name:
         name.remove(None)
@@ -287,7 +359,7 @@ def ratio(userString = 'firiusbob', playlistString = 'Random Pool of Stuff'):
     user = getUser(userString)
     playlists = getUserPlaylists(user)
     playlist = getPlaylist(playlists, playlistString)
-    tracks = sp.getTracksFromItem(playlist)
+    tracks = getTracksFromItem(playlist)
     artists = [artist['name'] for track in tracks for artist in track['track']['artists']]
     countplaylist = {i:artists.count(i) for i in artists} 
     if None in list(countplaylist.keys()):
@@ -299,7 +371,7 @@ def ratio(userString = 'firiusbob', playlistString = 'Random Pool of Stuff'):
         if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore:
             continue
 
-        x = threading.Thread(target=getTracksFromItem, args=(playlist, trackss,))
+        x = threading.Thread(target=appendTracksFromItem, args=(playlist, trackss,))
         threads.append(x)
         x.start()
 
@@ -328,7 +400,7 @@ def ratio(userString = 'firiusbob', playlistString = 'Random Pool of Stuff'):
     return sortedCount
 
 def findSongInPlayliststhread(playlist, results, songId):
-    tracks = sp.getTracksFromItem(playlist)
+    tracks = getTracksFromItem(playlist)
     ids = [track['track']['id'] for track in tracks]
     if songId in ids:
         results.append(playlist['name'])
@@ -356,7 +428,7 @@ def findSongInPlaylists(userString, songId):
     return results
 
 def findArtistInPlayliststhread(playlist, results, artistId):
-    tracks = sp.getTracksFromItem(playlist)
+    tracks = getTracksFromItem(playlist)
     data = [(track['track']['name'], [artist['id'] for artist in track['track']['artists']]) for track in tracks]
     temp = []
     for i, j in data:
@@ -398,7 +470,7 @@ def searchRPOS(song):
     song = song.split('feat.', 1)[0]
     song = song.split('-', 1)[0]
     playlist = sp.getPlaylistFromId('5WYRn0FxSUhVsOQpQQ0xBV')
-    tracks = sp.getTracksFromItem(playlist)
+    tracks = getTracksFromItem(playlist)
     results = []
     print('Searching RPOS...')
     for track in tracks:
@@ -417,7 +489,7 @@ def searchRPOS(song):
     return results
 
 def searchPlayliststhread(playlist, songids, song):
-    tracks = sp.getTracksFromItem(playlist)
+    tracks = getTracksFromItem(playlist)
     for track in tracks:
         if track is None or track['track'] is None:
             continue
@@ -472,11 +544,11 @@ def convert(playlistString):
     user = getUserFromString('firiusbob')
     rposplaylist = sp.getPlaylistFromId('5WYRn0FxSUhVsOQpQQ0xBV')
     print('Pulling from RPOS')
-    rpostracks = sp.getTracksFromItem(rposplaylist)
+    rpostracks = getTracksFromItem(rposplaylist)
     rposdata = [(track['track']['name'], [artist['name'] for artist in track['track']['artists']], track['track']['uri']) for track in rpostracks]
     print('Finished pulling from RPOS. Searching...')
     playlist = getPlaylist(getUserPlaylists(user), playlistString)
-    tracks = sp.getTracksFromItem(playlist)
+    tracks = getTracksFromItem(playlist)
     uris = []
     threads = []
     for track in tracks:
@@ -502,11 +574,11 @@ def notinRPOS(playlistString):
     user = getUser('firiusbob')
     rposplaylist = sp.getPlaylistFromId('5WYRn0FxSUhVsOQpQQ0xBV')
     print('Pulling from RPOS')
-    rpostracks = sp.getTracksFromItem(rposplaylist)
+    rpostracks = getTracksFromItem(rposplaylist)
     rposids = [track['track']['id'] for track in rpostracks]
     print('Finished pulling from RPOS. Comparing...')
     playlist = getPlaylist(getUserPlaylists(user), playlistString)
-    tracks = sp.getTracksFromItem(playlist)
+    tracks = getTracksFromItem(playlist)
     results = [track for track in tracks if track['track']['id'] not in rposids]
     return [(track['track']['name'], [artist['name'] for artist in track['track']['artists']], track['track']['id']) for track in results]
 
@@ -544,7 +616,7 @@ def commonSongsUsers(*userids):
         threads = []
         trackss = []
         for playlist in playlists:
-            x = threading.Thread(target=getTracksFromItem, args=(playlist, trackss,))
+            x = threading.Thread(target=appendTracksFromItem, args=(playlist, trackss,))
             threads.append(x)
             x.start()
 
@@ -576,8 +648,8 @@ def getAudioFeatures(ids):
 def playlistDiff(userString1, playlistString1, userString2, playlistString2):
     playlist1 = getPlaylist(getUserPlaylists(getUser(userString1)), playlistString1)
     playlist2 = getPlaylist(getUserPlaylists(getUser(userString2)), playlistString2)
-    tracks1 = sp.getTracksFromItem(playlist1)
-    tracks2 = sp.getTracksFromItem(playlist2)
+    tracks1 = getTracksFromItem(playlist1)
+    tracks2 = getTracksFromItem(playlist2)
     trackids1 = [track['track']['id'] for track in tracks1]
     trackids2 = [track['track']['id'] for track in tracks2]
     setplaylist1 = set(trackids1)
@@ -606,7 +678,7 @@ def checkWd():
     wd = []
     subs = []
     for playlist in filtered:
-        tracks = sp.getTracksFromItem(playlist)
+        tracks = getTracksFromItem(playlist)
         if playlist['name'] == 'Weekend (Wd)':
             wd = [track['track']['id'] for track in tracks]
         else:
@@ -626,7 +698,7 @@ def topFeaturesPlaylists():
     user = getUserFromString('firiusbob')
     userobj = getAuthUser(user)
     rpos = getPlaylist(userobj.getPlaylists(), 'Random Pool of Stuff')
-    tracks = sp.getTracksFromItem(rpos)
+    tracks = getTracksFromItem(rpos)
     trackids = [track['track']['id'] for track in tracks]
     setids = set(trackids)
     if None in setids:
