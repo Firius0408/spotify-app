@@ -40,7 +40,7 @@ def songTrend(song, length):
         else:
             result.append((i.replace('.json', ''), -1))
 
-    return result
+    return sorted(result, key=operator.itemgetter(0))
 
 def presence(length):
     try:

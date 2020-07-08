@@ -18,7 +18,7 @@ ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleac
 users = {}
 userplaylists = {}
 playlisttracks = {}
-files = []
+files = set()
 
 def clearCache():
     global users, userplaylists, playlisttracks
@@ -27,15 +27,19 @@ def clearCache():
     playlisttracks = {}
 
 def refreshCacheUsers(k):
+    global users
     users[k] = sp.getUser(k)
 
 def refreshCachePlaylists(k):
+    global userplaylists
     userplaylists[k] = sp.getUserPlaylists({'id': k})
 
 def refreshCacheTracks(k):
+    global playlisttracks
     playlisttracks[k] = sp.getTracksFromItem({'tracks': {'href': 'https://api.spotify.com/v1/playlists/' + k + '/tracks'}})
 
 def refreshCache():
+    global users, userplaylists, playlisttracks
     threads = []
     for k in users.keys():
         x = threading.Thread(target=refreshCacheUsers, args=(k,))
@@ -56,6 +60,7 @@ def refreshCache():
         thread.join()
 
 def getUserPlaylists(user):
+    global userplaylists
     iid = user['id']
     if iid in userplaylists.keys():
         return userplaylists[iid]
@@ -65,6 +70,8 @@ def getUserPlaylists(user):
         return temp
 
 def getUser(userString):
+    global users
+    userString = userString.replace('spotify:user:', '')
     if userString in users.keys():
         return users[userString]
     else:
@@ -73,6 +80,7 @@ def getUser(userString):
         return temp
 
 def getTracksFromItem(playlist):
+    global playlisttracks
     iid = playlist['id']
     if iid in playlisttracks.keys():
         return playlisttracks[iid]
@@ -82,6 +90,7 @@ def getTracksFromItem(playlist):
         return temp
 
 def appendTracksFromItem(playlist, tracks):
+    global playlisttracks
     iid = playlist['id']
     if iid in playlisttracks.keys():
         tracks.append(playlisttracks[iid])
@@ -91,13 +100,18 @@ def appendTracksFromItem(playlist, tracks):
         tracks.append(temp)
 
 def saveToFile(data, filename):
-    files.append(filename)
+    global files
+    files.add(filename)
     with open(filename, 'w') as f:
         json.dump(data, f, indent=4, separators=(', ', ': '))
 
 def clearFiles():
+    global files
     for ffile in files:
-        os.remove(ffile)
+        if os.path.isfile(ffile):
+            os.remove(ffile)
+
+    files = set()
 
 def getPlaylist(playlists, playlistString):
     namesdemoji = [emoji.demojize(playlist['name']) for playlist in playlists]
@@ -317,7 +331,7 @@ def playlistRepeats(userString, playlistString):
 
 def playlistRepeatsthread(playlist, results):
     tracks = getTracksFromItem(playlist)
-    name = [track['track']['name'] + ','.join([artist['name'] for artist in track['track']['artist']]) for track in tracks]
+    name = [track['track']['name'] + ' ' + ', '.join([artist['name'] for artist in track['track']['artists']]) for track in tracks]
     while None in name:
         name.remove(None)
 
