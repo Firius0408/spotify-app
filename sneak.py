@@ -620,8 +620,14 @@ def playlistFollowers(userString):
     return sortedCount
 
 def commonSongsUsers(*userids):
+    userids = [i.replace('spotify:user:', '') for i in userids]
+    if len(userids) < 2:
+        print('You need at least 2 users bruh')
+        return
+
     refreshtoken = 'AQAcsVCKBnutCWVRPih8OsU1ScZRFjPTePJNaY0GSehMefJmFdscQlGeGuIoU4fAfZ0rkOrx2SCOW3zVMEt3zKJG0mt2yBgKJwilvgCdoZ-ftJBh6AK1PjNVOPWlbbb6vFs'
     botuser = sp.getAuthUser(refreshtoken)
+    commonsongs = userFile['commonsongs']
     print('Pulling songs...')
     tracksss = []
     for userid in userids:
@@ -630,6 +636,9 @@ def commonSongsUsers(*userids):
         threads = []
         trackss = []
         for playlist in playlists:
+            if playlist['owner']['id'] != userid or "Top Songs of " in playlist['name']:
+                continue
+
             x = threading.Thread(target=appendTracksFromItem, args=(playlist, trackss,))
             threads.append(x)
             x.start()
@@ -642,19 +651,34 @@ def commonSongsUsers(*userids):
     print('Finding common songs...')
     trackuri = []
     for trackss in tracksss:
-        trackuri.append([track['track']['uri'] for tracks in trackss for track in tracks])
+        trackuri.append([track['track']['uri'] for tracks in trackss for track in tracks if track['track'] is not None])
 
     commonuri = set(trackuri[0])
     for i in trackuri[1:]:
         commonuri.intersection_update(i)
-
+    
     commonuri = [i for i in commonuri if i is not None]
-    names = [getUser(i)['display_name'] for i in userids]
-    name = 'Common Songs between ' + ' and '.join(names)
-    print('Creating playlist...')
-    playlist = botuser.createPlaylist(name)
-    botuser.addSongsToPlaylist(playlist['id'], commonuri)
-    return playlist['href']
+    playlistid = None
+    for playlist in commonsongs:
+        if set(userids) == set(playlist[0]):
+            playlistid = playlist[1]
+
+    if playlistid is None:
+        names = [getUser(i)['display_name'] for i in userids]
+        name = 'Common Songs between ' + ' and '.join(names)
+        print('Creating playlist...')
+        playlistid = botuser.createPlaylist(name)['id']
+        commonsongs.append((userids, playlistid))
+        userFile['commonsongs'] = commonsongs
+        if __name__ == '__main__':
+            with open(sys.path[0] + '/data.json', 'w') as f:
+                json.dump(userFile, f, indent=4, separators=(',', ': '))
+        else:
+            with open('./data.json', 'w') as f:
+                json.dump(userFile, f, indent=4, separators=(',', ': '))
+
+    botuser.addSongsToPlaylist(playlistid, commonuri)
+    return playlistid
 
 def getAudioFeatures(ids):
     return sp.getAudioFeatures(ids)
