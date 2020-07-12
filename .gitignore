@@ -7,4 +7,4 @@ Pipfile.lock
 /topsongs/**
 !/topsongs/diff.py
 *.json
-!users.json
+!data.json

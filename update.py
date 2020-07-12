@@ -84,11 +84,11 @@ def last100RandomPool():
 
 date = datetime.datetime.today()
 if __name__ == '__main__':
-    with open(sys.path[0] + '/users.json') as json_file:
+    with open(sys.path[0] + '/data.json') as json_file:
         userFile = json.load(json_file)
 
     update()
     last100RandomPool()
 else:
-    with open('./users.json') as json_file:
+    with open('./data.json') as json_file:
         userFile = json.load(json_file)
