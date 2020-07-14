@@ -54,8 +54,7 @@ def presence(length):
         with open(length + '/' + i) as f:
             songs = json.load(f)
 
-        for song in songs:
-            result.append(song)
+        result.extend(songs)
 
     count = {i:result.count(i) for i in result}
     sortedcount = sorted(list(count.items()), key=operator.itemgetter(1), reverse=True)
@@ -68,6 +67,7 @@ def weight(length):
         print(length + 'is not a valid length')
         return
 
+    dirlist = sorted(dirlist)
     dates = []
     ranks = {}
     for i in dirlist:
@@ -82,11 +82,11 @@ def weight(length):
 
             ranks[song][date] = songs.index(song) + 1
 
-    areas = {}
+    areas = []
     for key,value in ranks.items():
         area = 0.0
         count = 0.0
-        for i in range(0,len(dates) - 1):
+        for i in range(0, len(dates) - 1):
             date = dates[i]
             date1 = dates[i+1]
             if date not in value.keys() or date1 not in value.keys():
@@ -95,11 +95,11 @@ def weight(length):
             temp = value[date]
             temp1 = value[date1]
             counttemp = (date1 - date).total_seconds()
-            area +=  counttemp * ((temp + temp1) / 2)
+            area += counttemp * ((temp + temp1) / 2)
             count += counttemp
 
         if count:
-            areas[key] = area/count
+            areas.append((key, area/count))
 
-    sort = sorted(list(areas.items()), key=operator.itemgetter(1))
+    sort = sorted(areas, key=operator.itemgetter(1))
     return sort
