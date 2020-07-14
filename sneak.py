@@ -12,7 +12,7 @@ import os
 from update import getAuthUser, userFile, sp, refreshtokenme, botuser
 from spotify import getUserFromString
 
-ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'L?', 'IYLHLHG', 'Musical', 'Disney', 'Indie', 'Classical', 'Monstercat', 'Rap', 'House', 'The Beatles', 'Ashley', 'Jonathan', 'Daniel', 'Phillip', 'Shan', 'Pegboard Nerds', 'Drake', 'Hardwell', 'Martin Garrix', 'Maroon 5', 'Taylor Swift', 'Andrea Bocelli', 'Kygo', 'OneRepublic', 'Album Worthy', 't', 'Memories', 'Last 100 songs in RPoS', 'Top Danceability Songs for firiusbob', 'Top Valence Songs for firiusbob', 'Top Energy Songs for firiusbob']
+ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'L?', 'IYLHLHG', 'Musical', 'Disney', 'Indie', 'Classical', 'Monstercat', 'Rap', 'House', 'The Beatles', 'Ashley', 'Jonathan', 'Daniel', 'Phillip', 'Shan', 'Pegboard Nerds', 'Drake', 'Hardwell', 'Martin Garrix', 'Maroon 5', 'Taylor Swift', 'Andrea Bocelli', 'Kygo', 'Zedd', 'OneRepublic', 'Album Worthy', 't', 'Memories', 'Last 100 songs in RPoS', 'Top Danceability Songs for firiusbob', 'Top Valence Songs for firiusbob', 'Top Energy Songs for firiusbob']
 
 users = {}
 userplaylists = {}
@@ -758,3 +758,27 @@ def topFeaturesPlaylists():
     userobj.addSongsToPlaylist(danceobj['id'], danceuris)
     userobj.addSongsToPlaylist(energyobj['id'], energyuris)
     userobj.addSongsToPlaylist(valenceobj['id'], valenceuris)
+
+def newPlaylistsPullThread(playlist, filename):
+    tracks = getTracksFromItem(playlist)
+    name = [track['track']['name'] for track in tracks]
+    filtered = [i for i in name if i]
+    print('writing ' + filename)
+    with open('./newplaylists/' + filename + '.json', 'w') as f:
+        json.dump(filtered, f, indent=4, separators=(', ', ': '))
+
+def newPlaylistsPull():
+    user = getUser('firiusbob')
+    playlists = getUserPlaylists(user)
+    threads = []
+    for playlist in playlists:
+        match = re.search(r'\d{4}-\d{1,2}-\d{1,2}', playlist['name'])
+        if match is None:
+            continue
+
+        x = threading.Thread(target=newPlaylistsPullThread, args=(playlist, match.group(),))
+        threads.append(x)
+        x.start()
+    
+    for thread in threads:
+        thread.join()
