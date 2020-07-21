@@ -6,18 +6,6 @@ import sys
 import os
 import dotenv
 
-dotenv.load_dotenv()
-
-refreshtokenme = os.getenv('REFRESHTOKENME')
-
-try:
-    sp = spotifywebapi.Spotify(os.getenv('CLIENT_ID'), os.getenv('CLIENT_SECRET'))
-except spotifywebapi.SpotifyError:
-    print('Error loading bot')
-    exit()
-
-botuser = sp.getAuthUser(refreshtokenme)
-
 def getAuthUser(user):
     return sp.getAuthUser(user['refresh_token'])
 
@@ -83,6 +71,15 @@ def last100RandomPool():
     userme.replacePlaylistItems('1iAyKjAS15OOlFBFtnWX1n', uris)
 
 date = datetime.datetime.today()
+dotenv.load_dotenv()
+refreshtokenme = os.getenv('REFRESHTOKENME')
+try:
+    sp = spotifywebapi.Spotify(os.getenv('CLIENT_ID'), os.getenv('CLIENT_SECRET'))
+except spotifywebapi.SpotifyError:
+    print('Error loading bot')
+    exit()
+
+botuser = sp.getAuthUser(refreshtokenme)
 if __name__ == '__main__':
     with open(sys.path[0] + '/data.json') as json_file:
         userFile = json.load(json_file)
