@@ -414,9 +414,10 @@ def ratio(userString = 'firiusbob', playlistString = 'Random Pool of Stuff'):
 
 def findSongInPlayliststhread(playlist, results, songId):
     tracks = getTracksFromItem(playlist)
-    ids = [track['track']['id'] for track in tracks]
-    if songId in ids:
-        results.append(playlist['name'])
+    for track in tracks:
+        if track['track']['id'] == songId:
+            results.append(playlist['name'])
+            return
 
 def findSongInPlaylists(userString, songId):
     user = getUser(userString)
@@ -439,6 +440,35 @@ def findSongInPlaylists(userString, songId):
         thread.join()
 
     return results
+
+def dateAddedSongInPlayliststhread(playlist, results, songId):
+    tracks = getTracksFromItem(playlist)
+    for track in tracks:
+        if track['track']['id'] == songId:
+            results.append((playlist['name'], track['added_at'].replace('T', ' ').replace('Z', '')))
+            return
+
+def dateAddedSongInPlaylists(userString, songId):
+    user = getUser(userString)
+    if user is None:
+        return
+
+    songId = songId.replace('spotify:track:', '')
+    playlists = getUserPlaylists(user)
+    results = []
+    threads = []
+    for playlist in playlists:
+        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
+            continue
+
+        x = threading.Thread(target=dateAddedSongInPlayliststhread, args=(playlist, results, songId))
+        threads.append(x)
+        x.start()
+
+    for thread in threads:
+        thread.join()
+
+    return sorted(results, key=operator.itemgetter(1))
 
 def findArtistInPlayliststhread(playlist, results, artistId):
     tracks = getTracksFromItem(playlist)
