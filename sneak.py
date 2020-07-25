@@ -330,7 +330,7 @@ def playlistRepeats(userString, playlistString):
 
 def playlistRepeatsthread(playlist, results):
     tracks = getTracksFromItem(playlist)
-    name = [track['track']['name'] + ' ' + ', '.join([artist['name'] for artist in track['track']['artists']]) for track in tracks]
+    name = [track['track']['name'] + ' : ' + ', '.join([artist['name'] for artist in track['track']['artists']]) for track in tracks]
     while None in name:
         name.remove(None)
 
@@ -569,6 +569,7 @@ def searchPlaylists(userString, song):
     for thread in threads:
         thread.join()
 
+    songids = list(filter(None.__ne__, songids))
     songids = list(set(songids))
     tracks = sp.getTracksFromIds(songids)
     results = [(track['name'], [artist['name'] for artist in track['artists']], track['id'], track['album']['name']) for track in tracks]
@@ -593,19 +594,13 @@ def convert(playlistString):
     playlist = getPlaylist(getUserPlaylists(user), playlistString)
     tracks = getTracksFromItem(playlist)
     uris = []
-    threads = []
     for track in tracks:
         if track is None or track['track'] is None:
             continue
 
         name = track['track']['name']
         artists = [artist['name'] for artist in track['track']['artists']]
-        x = threading.Thread(target=convertThread, args=(track, name, artists, rposdata, uris,))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+        convertThread(track, name, artists, rposdata, uris)
 
     print('Finished search. Creating playlist')
     userobj = getAuthUser(user)
@@ -810,5 +805,30 @@ def newPlaylistsPull():
         threads.append(x)
         x.start()
     
+    for thread in threads:
+        thread.join()
+
+def artistCheckThread(artist, playlist, rpostracks, results):
+    tracks = getTracksFromItem(playlist)
+    inrpos = [track['track']['name'] for track in rpostracks if artist in [i['name'] for i in track['track']['artists']]]
+    inplaylist = [track['track']['name'] for track in tracks]
+    diff = list(set(inrpos) - set(inplaylist))
+    if diff:
+        print('{}: {}'.format(artist, ', '.join(diff)))
+
+def artistCheck():
+    artists = ['AJR', 'Andrea Bocelli', 'The Beatles', 'Bleachers', 'Drake', 'Ed Sheeran', 'Eminem', 'Hardwell', 'Kygo', 'Logic', 'Maroon 5', 'Martin Garrix', 'OneRepublic', 'Pegboard Nerds', 'Post Malone', 'Queen', 'Taylor Swift', 'Zedd']
+    user = getUser('firiusbob')
+    playlists = getUserPlaylists(user)
+    rpos = getPlaylist(playlists, 'Random Pool of Stuff')
+    rpostracks = getTracksFromItem(rpos)
+    threads = []
+    results = []
+    for artist in artists:
+        playlist = getPlaylist(playlists, artist)
+        x = threading.Thread(target=artistCheckThread, args=(artist, playlist, rpostracks, results,))
+        threads.append(x)
+        x.start()
+
     for thread in threads:
         thread.join()
