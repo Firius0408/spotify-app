@@ -1,7 +1,7 @@
 import spotifywebapi
 import json
 import datetime
-import threading
+import multiprocessing
 import sys
 import os
 import dotenv
@@ -22,9 +22,9 @@ def updateIndividual(user):
 
     name = userobj.getUser()['display_name']
     print('updating playlists for user ' + name)
-    x = threading.Thread(target=updatePlaylist, args=(userobj, botuser, 'long_term', playlistidlong,))
-    y = threading.Thread(target=updatePlaylist, args=(userobj, botuser, 'medium_term', playlistidmid,))
-    z = threading.Thread(target=updatePlaylist, args=(userobj, botuser, 'short_term', playlistidshort,))
+    x = multiprocessing.Process(target=updatePlaylist, args=(userobj, botuser, 'long_term', playlistidlong,))
+    y = multiprocessing.Process(target=updatePlaylist, args=(userobj, botuser, 'medium_term', playlistidmid,))
+    z = multiprocessing.Process(target=updatePlaylist, args=(userobj, botuser, 'short_term', playlistidshort,))
     x.start()
     print('updating long playlist for user ' + name)
     y.start()
@@ -52,14 +52,14 @@ def updatePlaylist(user, playlistuser, term, playlistid):
 def update():
     print('update initiated at ' + date.strftime("%Y-%m-%d %H:%M:%S"))
     print('\n\n\n')
-    threads = []
+    processes = []
     for i in userFile['users']:
-        x = threading.Thread(target=updateIndividual, args=(i,))
-        threads.append(x)
+        x = multiprocessing.Process(target=updateIndividual, args=(i,))
+        processes.append(x)
         x.start()
 
-    for thread in threads:
-        thread.join()
+    for process in processes:
+        process.join()
 
 def last100RandomPool():
     userme = getAuthUser(userFile['users'][0])
