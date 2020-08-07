@@ -391,10 +391,7 @@ def ratio(userString = 'firiusbob', playlistString = 'Random Pool of Stuff'):
     for thread in threads:
         thread.join()
 
-    artists = []
-    for tracks in trackss:
-        artists.extend([artist['name'] for track in tracks for artist in track['track']['artists']])
-
+    artists = [artist['name'] for tracks in trackss for track in tracks for artist in track['track']['artists']]
     count = {i:artists.count(i) for i in artists}
     if None in list(count.keys()):
         del count[None]
@@ -403,6 +400,47 @@ def ratio(userString = 'firiusbob', playlistString = 'Random Pool of Stuff'):
     for i in count:
         if i not in list(countplaylist.keys()):
             print('Could not find ' + i)
+            continue
+
+        allNumber = count[i]
+        poolNumber = countplaylist[i]
+        ratio[i] = allNumber / poolNumber
+
+    sortedCount = sorted(list(ratio.items()), key=operator.itemgetter(1), reverse=True)
+    return sortedCount
+
+def ratioGrouped(userString = 'firiusbob', playlistString = 'Random Pool of Stuff'):
+    user = getUser(userString)
+    playlists = getUserPlaylists(user)
+    playlist = getPlaylist(playlists, playlistString)
+    tracks = getTracksFromItem(playlist)
+    artists = [tuple(artist['name'] for artist in track['track']['artists']) for track in tracks]
+    countplaylist = {i:artists.count(i) for i in artists} 
+    if None in list(countplaylist.keys()):
+        del countplaylist[None]
+
+    trackss = []
+    threads = []
+    for playlist in playlists:
+        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore:
+            continue
+
+        x = threading.Thread(target=appendTracksFromItem, args=(playlist, trackss,))
+        threads.append(x)
+        x.start()
+
+    for thread in threads:
+        thread.join()
+
+    artists = [tuple(artist['name'] for artist in track['track']['artists']) for tracks in trackss for track in tracks]
+    count = {i:artists.count(i) for i in artists}
+    if None in list(count.keys()):
+        del count[None]
+
+    ratio = {}
+    for i in count:
+        if i not in list(countplaylist.keys()):
+            print('Could not find artist(s) ' + ', '.join(i))
             continue
 
         allNumber = count[i]
@@ -700,9 +738,24 @@ def commonSongsUsers(*userids):
         else:
             with open('./data.json', 'w') as f:
                 json.dump(userFile, f, indent=4, separators=(',', ': '))
+    else:
+        print('Blanking playlist...')
+        botuser.replacePlaylistItems(playlistid, [])
 
     botuser.addSongsToPlaylist(playlistid, commonuri)
     return playlistid
+
+def commonSongsUsersAll():
+    commonsongs = userFile['commonsongs']
+    for commonsong in commonsongs:
+        print(', '.join(commonsong[0]))
+        while True:
+            try:
+                commonSongsUsers(*commonsong[0])
+            except:
+                continue
+            
+            break
 
 def getAudioFeatures(ids):
     return sp.getAudioFeatures(ids)
