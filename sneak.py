@@ -885,3 +885,8 @@ def artistCheck():
 
     for thread in threads:
         thread.join()
+
+def checkAll():
+    print(artistCheck())
+    print(checkWd())
+    print(playlistRepeatsAll('firiusbob'))
