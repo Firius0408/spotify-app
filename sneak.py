@@ -112,18 +112,15 @@ def clearFiles():
 
     files = set()
 
-def getPlaylist(playlists, playlistString):
-    namesdemoji = [emoji.demojize(playlist['name']) for playlist in playlists]
-    playlistString = emoji.demojize(playlistString)
-    playlist = process.extractOne(playlistString, namesdemoji, score_cutoff=80)
+def getPlaylist(playlists, playliststring):
+    demojidict = {emoji.demojize(playlist['name']): playlist for playlist in playlists}
+    playlistString = emoji.demojize(playliststring)
+    playlist = process.extractOne(playlistString, list(demojidict.keys()), score_cutoff=80)
     if playlist is None:
         print ('Unable to determine playlist')
         return
 
-    playlistName = emoji.emojize(playlist[0])
-    for s in playlists:
-        if s['name'] == playlistName:
-            return s
+    return demojidict[playlist[0]]
 
 def getSongsPlaylist(playlist):
     if "Past 4 Weeks" in playlist['name']:
