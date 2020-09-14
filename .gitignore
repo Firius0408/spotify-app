@@ -8,3 +8,4 @@ Pipfile.lock
 !/topsongs/diff.py
 *.json
 !data.json
+*.sh
