@@ -245,7 +245,7 @@ def topGenresInPlaylist(userString, playlistString):
     sortedCount = sorted(list(count.items()), key=operator.itemgetter(1), reverse=True)
     return sortedCount
 
-def topSongsInPlaylists(userString):
+def topSongsInPlaylistsSub(userString):
     user = getUser(userString)
     if user is None:
         return
@@ -275,6 +275,10 @@ def topSongsInPlaylists(userString):
                               'Album': track['track']['album']['name'],
                               'Popularity': track['track']['popularity']}
 
+    return trackids, trackinfo
+
+def topSongsInPlaylists(userString):
+    trackids, trackinfo = topSongsInPlaylistsSub(userString)
     trackids = list(filter(None.__ne__, trackids))
     if None in list(trackinfo.keys()):
         del trackinfo[None]
@@ -717,27 +721,26 @@ def commonSongsUsers(*userids):
         commonuri.intersection_update(i)
     
     commonuri = [i for i in commonuri if i is not None]
-    playlistid = None
     for playlist in commonsongs:
         if set(userids) == set(playlist[0]):
             playlistid = playlist[1]
+            print('Blanking playlist...')
+            botuser.replacePlaylistItems(playlistid, [])
+            botuser.addSongsToPlaylist(playlistid, commonuri)
+            return playlistid
 
-    if playlistid is None:
-        names = [getUser(i)['display_name'] for i in userids]
-        name = 'Common Songs between ' + ' and '.join(names)
-        print('Creating playlist...')
-        playlistid = botuser.createPlaylist(name)['id']
-        commonsongs.append((userids, playlistid))
-        userFile['commonsongs'] = commonsongs
-        if __name__ == '__main__':
-            with open(sys.path[0] + '/data.json', 'w') as f:
-                json.dump(userFile, f, indent=4, separators=(',', ': '))
-        else:
-            with open('./data.json', 'w') as f:
-                json.dump(userFile, f, indent=4, separators=(',', ': '))
+    names = [getUser(i)['display_name'] for i in userids]
+    name = 'Common Songs between ' + ' and '.join(names)
+    print('Creating playlist...')
+    playlistid = botuser.createPlaylist(name)['id']
+    commonsongs.append((userids, playlistid))
+    userFile['commonsongs'] = commonsongs
+    if __name__ == '__main__':
+        with open(sys.path[0] + '/data.json', 'w') as f:
+            json.dump(userFile, f, indent=4, separators=(',', ': '))
     else:
-        print('Blanking playlist...')
-        botuser.replacePlaylistItems(playlistid, [])
+        with open('./data.json', 'w') as f:
+            json.dump(userFile, f, indent=4, separators=(',', ': '))
 
     botuser.addSongsToPlaylist(playlistid, commonuri)
     return playlistid
@@ -753,6 +756,32 @@ def commonSongsUsersAll():
                 continue
             
             break
+
+def commonSongsTopSongs(*userids):
+    commonsongs = userFile['commonsongs']
+    playlistid = None
+    for playlist in commonsongs:
+        if set(userids) == set(playlist[0]):
+            playlistid = playlist[1]
+            break
+
+    if playlistid is None:
+        print('Could not find existing playlist. Creating one...')
+        playlistid = commonSongsUsers(*userids)
+
+    print('Retrieving common songs...')
+    playlist = sp.getPlaylistFromId(playlistid)
+    tracks = getTracksFromItem(playlist)
+    tracks = {i['track']['id']: i['track']['name'] for i in tracks}
+    trackids = [j for i in userids for j in topSongsInPlaylistsSub(i)[0]]
+    trackids = list(filter(None.__ne__, trackids))
+    count = {i: trackids.count(i) for i in list(tracks.keys())}
+    if None in list(count.keys()):
+        del count[None]
+
+    result = [(tracks[i], j) for i, j in list(count.items())]
+    sortedResult = sorted(result, key=operator.itemgetter(1), reverse=True)
+    return sortedResult
 
 def getAudioFeatures(ids):
     return sp.getAudioFeatures(ids)
@@ -887,3 +916,67 @@ def checkAll():
     print(artistCheck())
     print(checkWd())
     print(playlistRepeatsAll('firiusbob'))
+
+def userUpToDate(userString):
+    user = getUser(userString)
+    if user is None:
+        return
+
+    playlists = getUserPlaylists(user)
+    trackss = []
+    threads = []
+    for playlist in playlists:
+        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore or "Common Songs " in playlist['name']:
+            continue
+
+        x = threading.Thread(target=appendTracksFromItem, args=(playlist, trackss,))
+        threads.append(x)
+        x.start()
+
+    for thread in threads:
+        thread.join()
+
+    tracks = [track for i in trackss for track in i]
+    albums = {}
+    for track in tracks:
+        albumid = track['track']['album']['id']
+        if albumid is None:
+            continue
+
+        if albumid not in albums.keys():
+            releasedate = track['track']['album']['release_date']
+            precision = track['track']['album']['release_date_precision']
+            if precision == 'day':
+                albums[albumid] = datetime.datetime.strptime(releasedate, '%Y-%m-%d')
+            elif precision == 'month':
+                albums[albumid] = datetime.datetime.strptime(releasedate, '%Y-%m')
+            elif precision == 'year':
+                albums[albumid] = datetime.datetime.strptime(releasedate, '%Y')
+            else:
+                print('uh oh')
+                print(releasedate + precision)
+                return
+
+    trackidsdates = {}
+    for track in tracks:
+        idd = track['track']['id']
+        if idd is None or track['track']['album']['id'] is None:
+            continue
+
+        dateadded = datetime.datetime.strptime(track['added_at'], '%Y-%m-%dT%H:%M:%SZ')
+        if idd in trackidsdates.keys():
+            currentdateadded = trackidsdates[idd][0]
+            if currentdateadded < dateadded:
+                dateadded = currentdateadded
+
+        trackidsdates[idd] = (dateadded, track['track']['album']['id'])
+        
+    difference = []
+    for v in trackidsdates.values():
+        dateadded = v[0]
+        albumid = v[1]
+        releasedate = albums[albumid]
+        difference.append(dateadded - releasedate)
+    
+    averagediff = sum(difference, datetime.timedelta(0)) / len(difference)
+    return averagediff
