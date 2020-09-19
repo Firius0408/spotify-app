@@ -82,10 +82,11 @@ def weight(length):
 
             ranks[song][date] = songs.index(song) + 1
 
-    areas = []
-    for key,value in ranks.items():
+    results = []
+    for key, value in ranks.items():
         area = 0.0
         count = 0.0
+        toprank = 51
         for i in range(0, len(dates) - 1):
             date = dates[i]
             date1 = dates[i+1]
@@ -94,12 +95,30 @@ def weight(length):
                 
             temp = value[date]
             temp1 = value[date1]
+            if temp <= toprank:
+                toprank = temp
+                toprankdate = date
+            if temp1 <= toprank:
+                toprank = temp1
+                toprankdate = date1
+
             counttemp = (date1 - date).total_seconds()
             area += counttemp * ((temp + temp1) / 2)
             count += counttemp
 
         if count:
-            areas.append((key, area/count))
+            currentrank = 51
+            if dates[-1] in value.keys():
+                currentrank = value[dates[-1]]
 
-    sort = sorted(areas, key=operator.itemgetter(1))
+            firstdate = min(value.keys())
+            results.append({
+                'name': key, 
+                'weight': area/count, 
+                'currentrank': currentrank, 
+                'toprank': toprank, 
+                'toprankdate': toprankdate.strftime('%m/%d/%Y'), 
+                'firstdate': firstdate.strftime('%m/%d/%Y')})
+
+    sort = sorted(results, key=operator.itemgetter('weight'))
     return sort
