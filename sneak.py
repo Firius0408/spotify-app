@@ -268,6 +268,9 @@ def topSongsInPlaylistsSub(userString):
     trackinfo = {}
     for tracks in trackss:
         for track in tracks:
+            if track['track'] is None or track['track']['id'] is None:
+                continue
+
             iid = track['track']['id']
             trackids.append(iid)
             trackinfo[iid] = {'Name': track['track']['name'],
