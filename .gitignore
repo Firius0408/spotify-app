@@ -9,3 +9,4 @@ Pipfile.lock
 *.json
 !data.json
 *.sh
+.DS_Store
