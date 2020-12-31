@@ -1095,3 +1095,36 @@ def userUpToDate(userString):
 
     averagediff = sum(difference, datetime.timedelta(0)) / len(difference)
     return averagediff
+
+
+def latestAddedSongs(userString):
+    user = getUser(userString)
+    if user is None:
+        return
+
+    playlists = getUserPlaylists(user)
+    trackss = []
+    threads = []
+    for playlist in playlists:
+        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore or "Common Songs " in playlist['name']:
+            continue
+
+        x = threading.Thread(target=appendTracksFromItem,
+                             args=(playlist, trackss,))
+        threads.append(x)
+        x.start()
+
+    for thread in threads:
+        thread.join()
+
+    tracks = [track for i in trackss for track in i]
+    dateAdded = set()
+    idname = {}
+    for track in tracks:
+        dateadded = datetime.datetime.strptime(track['added_at'], '%Y-%m-%dT%H:%M:%SZ')
+        idname[track['track']['id']] = track['track']['name']
+        dateAdded.add((track['track']['id'], dateadded))
+
+    sorteddateAdded = sorted(dateAdded, key=lambda x: x[1], reverse=True)
+    output = [(idname[i], datetime.datetime.strftime(j, '%m/%d/%Y %H:%M:%S')) for i,j in sorteddateAdded]
+    return output
