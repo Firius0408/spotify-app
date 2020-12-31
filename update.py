@@ -6,10 +6,13 @@ import sys
 import os
 import dotenv
 
+
 def getAuthUser(user):
     return sp.getAuthUser(user['refresh_token'])
 
 # updates the three continuously updated playlists for the given user object
+
+
 def updateIndividual(user):
     playlistidlong = user['playlistidlong']
     playlistidmid = user['playlistidmid']
@@ -22,9 +25,12 @@ def updateIndividual(user):
 
     name = userobj.getUser()['display_name']
     print('updating playlists for user ' + name)
-    x = multiprocessing.Process(target=updatePlaylist, args=(userobj, botuser, 'long_term', playlistidlong,))
-    y = multiprocessing.Process(target=updatePlaylist, args=(userobj, botuser, 'medium_term', playlistidmid,))
-    z = multiprocessing.Process(target=updatePlaylist, args=(userobj, botuser, 'short_term', playlistidshort,))
+    x = multiprocessing.Process(target=updatePlaylist, args=(
+        userobj, botuser, 'long_term', playlistidlong,))
+    y = multiprocessing.Process(target=updatePlaylist, args=(
+        userobj, botuser, 'medium_term', playlistidmid,))
+    z = multiprocessing.Process(target=updatePlaylist, args=(
+        userobj, botuser, 'short_term', playlistidshort,))
     x.start()
     print('updating long playlist for user ' + name)
     y.start()
@@ -40,6 +46,8 @@ def updateIndividual(user):
 
 # Populates the given playlist with the current top songs for the given term for the user with accessTokenForUser
 # accessTokenPlaylist for access token of owner of given playlist in playlistid
+
+
 def updatePlaylist(user, playlistuser, term, playlistid):
     topsongs = user.getTopSongs(term, limit=50)
     uris = [i['uri'] for i in topsongs['items']]
@@ -49,6 +57,8 @@ def updatePlaylist(user, playlistuser, term, playlistid):
         print(err.message + ' for ' + user.getUser()['display_name'])
 
 # updates all continuously updated playlists for all users in users.json
+
+
 def update():
     print('update initiated at ' + date.strftime("%Y-%m-%d %H:%M:%S"))
     print('\n\n\n')
@@ -61,20 +71,24 @@ def update():
     for process in processes:
         process.join()
 
+
 def last100RandomPool():
     userme = getAuthUser(userFile['users'][0])
     rpos = sp.getPlaylistFromId('5WYRn0FxSUhVsOQpQQ0xBV')
     total = rpos['tracks']['total']
     offset = total - 100
     tracks = sp.getTracksFromItem(rpos)
-    uris = [i['track']['uri'] for i in tracks[offset:] if i['is_local'] is False]
+    uris = [i['track']['uri']
+            for i in tracks[offset:] if i['is_local'] is False]
     userme.replacePlaylistItems('1iAyKjAS15OOlFBFtnWX1n', uris)
+
 
 date = datetime.datetime.today()
 dotenv.load_dotenv()
 refreshtokenme = os.getenv('REFRESHTOKENME')
 try:
-    sp = spotifywebapi.Spotify(os.getenv('CLIENT_ID'), os.getenv('CLIENT_SECRET'))
+    sp = spotifywebapi.Spotify(
+        os.getenv('CLIENT_ID'), os.getenv('CLIENT_SECRET'))
 except spotifywebapi.SpotifyError:
     print('Error loading bot')
     exit()
