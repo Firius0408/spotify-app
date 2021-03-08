@@ -155,13 +155,15 @@ def getSongsPlaylist(playlist):
 
     date = datetime.datetime.strptime(match.group(), '%m/%d/%Y').date()
     filename = date.strftime('%Y-%m-%d')
-    print(directory + '     ' + filename + ' found')
-    tracks = getTracksFromItem(playlist)
-    name = [track['track']['name'] for track in tracks]
-    filtered = [i for i in name if i]
-    print('writing ' + directory + '     ' + filename)
-    with open('./topsongs/' + directory + '/' + filename + '.json', 'w') as f:
-        json.dump(filtered, f, indent=4, separators=(', ', ': '))
+    if os.path.lexists('./topsongs/' + directory + '/' + filename + '.json'):
+        print(directory + '     ' + filename + ' found')
+    else:
+        tracks = getTracksFromItem(playlist)
+        name = [track['track']['name'] for track in tracks]
+        filtered = [i for i in name if i]
+        print('writing ' + directory + '     ' + filename)
+        with open('./topsongs/' + directory + '/' + filename + '.json', 'w') as f:
+            json.dump(filtered, f, indent=4, separators=(', ', ': '))
 
 
 def topArtistsInPlaylists(userString, count=False, grouped=False):
