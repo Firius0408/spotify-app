@@ -1118,13 +1118,11 @@ def latestAddedSongs(userString):
         thread.join()
 
     tracks = [track for i in trackss for track in i]
-    dateAdded = set()
-    idname = {}
+    dateAdded = []
     for track in tracks:
         dateadded = datetime.datetime.strptime(track['added_at'], '%Y-%m-%dT%H:%M:%SZ')
-        idname[track['track']['id']] = track['track']['name']
-        dateAdded.add((track['track']['id'], dateadded))
+        dateAdded.append((track['track']['name'], dateadded))
 
     sorteddateAdded = sorted(dateAdded, key=lambda x: x[1], reverse=True)
-    output = [(idname[i], datetime.datetime.strftime(j, '%m/%d/%Y %H:%M:%S')) for i,j in sorteddateAdded]
+    output = [(i, datetime.datetime.strftime(j, '%m/%d/%Y %H:%M:%S')) for i,j in sorteddateAdded]
     return output
