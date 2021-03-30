@@ -42,7 +42,7 @@ def playlistIndividual(userobj, time, term):
     playlistobj = userobj.createPlaylist(
         "Top Songs of " + time + " as of " + date.strftime("%m/%d/%Y"))
     playlistid = playlistobj['id']
-    updatePlaylist(userobj, userobj, term, playlistid)
+    updatePlaylist(userobj, userobj, term, playlistid, userobj.getUser()['display_name'])
 
 # auth new user, add to users.json, create continuously updated playlists
 # re auth old user
