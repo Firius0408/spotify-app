@@ -2,7 +2,6 @@ import spotifywebapi
 import json
 import datetime
 import concurrent.futures
-import functools
 import sys
 import os
 import dotenv
