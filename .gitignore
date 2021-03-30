@@ -1,6 +1,5 @@
 *.vim
 *.pyc
-Pipfile.lock
 *log
 .env
 /.vscode/**
