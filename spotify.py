@@ -1,4 +1,4 @@
-import spotifywebapi
+from spotifywebapi import StatusCodeError
 from fuzzywuzzy import process
 import random
 import string
@@ -21,12 +21,11 @@ def generateRandomString(length):
 
 #searches users.json and returns user object from string arg
 
+userids = []
+for i in userFile['users']:
+    userids.append(i['id'])
 
 def getUserFromString(userString):
-    userids = []
-    for i in userFile['users']:
-        userids.append(i['id'])
-
     userid = process.extractOne(userString, userids, score_cutoff=80)
     if userid is None:
         return
@@ -92,7 +91,8 @@ def authUser():
                 "Top Songs of 6 Months for " + name, public=True)
             playlistshort = botuser.createPlaylist(
                 "Top Songs of 4 Weeks for " + name, public=True)
-        except spotifywebapi.StatusCodeError:
+        except StatusCodeError as err:
+            print(err)
             return
 
         user = {'id': userid,

@@ -1,14 +1,13 @@
 from fuzzywuzzy import process, fuzz
 import json
 import operator
-import time
 import re
 import sys
 import emoji
 from concurrent.futures import ThreadPoolExecutor, wait
 import datetime
 import os
-from update import getAuthUser, userFile, sp, refreshtokenme, botuser
+from update import getAuthUser, userFile, sp
 from spotify import getUserFromString
 
 ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'L?', 'IYLHLHG', 'Musical', 'Disney', 'Indie', 'Classical', 'Monstercat', 'Rap', 'House', 'The Beatles', 'Ashley', 'Jonathan', 'Daniel', 'Phillip', 'Shan', 'Pegboard Nerds', 'Drake', 'Hardwell',
@@ -761,7 +760,8 @@ def commonSongsUsersAll():
         while True:
             try:
                 commonSongsUsers(*commonsong[0])
-            except:
+            except Exception as err:
+                print(err)
                 continue
 
             break
@@ -904,7 +904,8 @@ def newPlaylistsPull():
             executor.submit(newPlaylistsPullThread, playlist, match.group())
 
 
-def artistCheckThread(artist, playlist, rpostracks, results):
+def artistCheckThread(artist, playlists, rpostracks):
+    playlist = getPlaylist(playlists, artist)
     tracks = getTracksFromItem(playlist)
     inrpos = [track['track']['name'] for track in rpostracks if artist in [
         i['name'] for i in track['track']['artists']]]
@@ -921,11 +922,9 @@ def artistCheck():
     playlists = getUserPlaylists(user)
     rpos = getPlaylist(playlists, 'Random Pool of Stuff')
     rpostracks = getTracksFromItem(rpos)
-    results = []
     with ThreadPoolExecutor() as executor:
         for artist in artists:
-            playlist = getPlaylist(playlists, artist)
-            executor.submit(artistCheckThread, artist, playlist, rpostracks, results)
+            executor.submit(artistCheckThread, artist, playlists, rpostracks)
 
 
 def checkAll():
