@@ -1,11 +1,13 @@
 import spotifywebapi
 import json
 import datetime
-import multiprocessing
+import concurrent.futures
+import functools
 import sys
 import os
 import dotenv
 
+bottomexecutor = concurrent.futures.ThreadPoolExecutor()
 
 def getAuthUser(user):
     return sp.getAuthUser(user['refresh_token'])
@@ -25,36 +27,26 @@ def updateIndividual(user):
 
     name = userobj.getUser()['display_name']
     print('updating playlists for user ' + name)
-    x = multiprocessing.Process(target=updatePlaylist, args=(
-        userobj, botuser, 'long_term', playlistidlong,))
-    y = multiprocessing.Process(target=updatePlaylist, args=(
-        userobj, botuser, 'medium_term', playlistidmid,))
-    z = multiprocessing.Process(target=updatePlaylist, args=(
-        userobj, botuser, 'short_term', playlistidshort,))
-    x.start()
+    bottomexecutor.submit(updatePlaylist, userobj, botuser, 'long_term', playlistidlong, name)
     print('updating long playlist for user ' + name)
-    y.start()
+    bottomexecutor.submit(updatePlaylist, userobj, botuser, 'medium_term', playlistidmid, name)
     print('updating mid playlist for user ' + name)
-    z.start()
+    bottomexecutor.submit(updatePlaylist, userobj, botuser, 'short_term', playlistidshort, name)
     print('updating short playlist for user ' + name)
-    x.join()
-    print('finished updating long playlist for user ' + name)
-    y.join()
-    print('finished updating mid playlist for user ' + name)
-    z.join()
-    print('finished updating short playlist for user ' + name)
 
 # Populates the given playlist with the current top songs for the given term for the user with accessTokenForUser
 # accessTokenPlaylist for access token of owner of given playlist in playlistid
 
 
-def updatePlaylist(user, playlistuser, term, playlistid):
+def updatePlaylist(user, playlistuser, term, playlistid, name):
     topsongs = user.getTopSongs(term, limit=50)
     uris = [i['uri'] for i in topsongs['items']]
     try:
         playlistuser.replacePlaylistItems(playlistid, uris)
     except spotifywebapi.StatusCodeError as err:
         print(err.message + ' for ' + user.getUser()['display_name'])
+    else:
+        print('finished ' + term.removesuffix('_term') + ' playlist for user ' + name)
 
 # updates all continuously updated playlists for all users in users.json
 
@@ -62,17 +54,13 @@ def updatePlaylist(user, playlistuser, term, playlistid):
 def update():
     print('update initiated at ' + date.strftime("%Y-%m-%d %H:%M:%S"))
     print('\n\n\n')
-    processes = []
-    for i in userFile['users']:
-        x = multiprocessing.Process(target=updateIndividual, args=(i,))
-        processes.append(x)
-        x.start()
-
-    for process in processes:
-        process.join()
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        for user in userFile['users']:
+            executor.submit(updateIndividual, user)
 
 
 def last100RandomPool():
+    print('updating last 100 RPOS')
     userme = getAuthUser(userFile['users'][0])
     rpos = sp.getPlaylistFromId('5WYRn0FxSUhVsOQpQQ0xBV')
     total = rpos['tracks']['total']
@@ -81,6 +69,7 @@ def last100RandomPool():
     uris = [i['track']['uri']
             for i in tracks[offset:] if i['is_local'] is False]
     userme.replacePlaylistItems('1iAyKjAS15OOlFBFtnWX1n', uris)
+    print('finished last 100 RPOS')
 
 
 date = datetime.datetime.today()
