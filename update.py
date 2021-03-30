@@ -1,12 +1,12 @@
 import spotifywebapi
 import json
 import datetime
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 import sys
 import os
-import dotenv
+from dotenv import load_dotenv
 
-bottomexecutor = concurrent.futures.ThreadPoolExecutor()
+bottomexecutor = ThreadPoolExecutor()
 
 def getAuthUser(user):
     return sp.getAuthUser(user['refresh_token'])
@@ -53,7 +53,7 @@ def updatePlaylist(user, playlistuser, term, playlistid, name):
 def update():
     print('update initiated at ' + date.strftime("%Y-%m-%d %H:%M:%S"))
     print('\n\n\n')
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor() as executor:
         for user in userFile['users']:
             executor.submit(updateIndividual, user)
 
@@ -72,13 +72,14 @@ def last100RandomPool():
 
 
 date = datetime.datetime.today()
-dotenv.load_dotenv()
+load_dotenv()
 refreshtokenme = os.getenv('REFRESHTOKENME')
 try:
     sp = spotifywebapi.Spotify(
         os.getenv('CLIENT_ID'), os.getenv('CLIENT_SECRET'))
-except spotifywebapi.SpotifyError:
+except spotifywebapi.SpotifyError as err:
     print('Error loading bot')
+    print(err)
     exit()
 
 botuser = sp.getAuthUser(refreshtokenme)
