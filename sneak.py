@@ -5,7 +5,7 @@ import time
 import re
 import sys
 import emoji
-import threading
+from concurrent.futures import ThreadPoolExecutor, wait
 import datetime
 import os
 from update import getAuthUser, userFile, sp, refreshtokenme, botuser
@@ -18,7 +18,6 @@ users = {}
 userplaylists = {}
 playlisttracks = {}
 files = set()
-
 
 def clearCache():
     global users, userplaylists, playlisttracks
@@ -45,24 +44,15 @@ def refreshCacheTracks(k):
 
 def refreshCache():
     global users, userplaylists, playlisttracks
-    threads = []
-    for k in users.keys():
-        x = threading.Thread(target=refreshCacheUsers, args=(k,))
-        threads.append(x)
-        x.start()
+    with ThreadPoolExecutor() as executor:
+        for k in users.keys():
+            executor.submit(refreshCacheUsers, k)
 
-    for k in userplaylists.keys():
-        x = threading.Thread(target=refreshCachePlaylists, args=(k,))
-        threads.append(x)
-        x.start()
+        for k in userplaylists.keys():
+            executor.submit(refreshCachePlaylists, k)
 
-    for k in playlisttracks.keys():
-        x = threading.Thread(target=refreshCacheTracks, args=(k,))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+        for k in playlisttracks.keys():
+            executor.submit(refreshCacheTracks, k)
 
 
 def getUserPlaylists(user):
@@ -173,21 +163,15 @@ def topArtistsInPlaylists(userString, count=False, grouped=False):
 
     playlists = getUserPlaylists(user)
     trackss = []
-    threads = []
-    for playlist in playlists:
-        if count and playlist['name'] in ignore:
-            continue
+    with ThreadPoolExecutor() as executor:
+        for playlist in playlists:
+            if count and playlist['name'] in ignore:
+                continue
 
-        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
-            continue
+            if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
+                continue
 
-        x = threading.Thread(target=appendTracksFromItem,
-                             args=(playlist, trackss,))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+            executor.submit(appendTracksFromItem, playlist, trackss)
 
     artists = []
     for tracks in trackss:
@@ -238,18 +222,12 @@ def topGenresInPlaylists(userString):
 
     playlists = getUserPlaylists(user)
     trackss = []
-    threads = []
-    for playlist in playlists:
-        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore:
-            continue
+    with ThreadPoolExecutor() as executor:
+        for playlist in playlists:
+            if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore:
+                continue
 
-        x = threading.Thread(target=appendTracksFromItem,
-                             args=(playlist, trackss,))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+            executor.submit(appendTracksFromItem, playlist, trackss)
 
     artistids = [artist['id']
                  for tracks in trackss for track in tracks for artist in track['track']['artists']]
@@ -289,18 +267,12 @@ def topSongsInPlaylistsSub(userString):
 
     playlists = getUserPlaylists(user)
     trackss = []
-    threads = []
-    for playlist in playlists:
-        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore or "Common Songs " in playlist['name']:
-            continue
+    with ThreadPoolExecutor() as executor:
+        for playlist in playlists:
+            if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore or "Common Songs " in playlist['name']:
+                continue
 
-        x = threading.Thread(target=appendTracksFromItem,
-                             args=(playlist, trackss,))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+            executor.submit(appendTracksFromItem, playlist, trackss)
 
     trackids = []
     trackinfo = {}
@@ -337,17 +309,12 @@ def topSongsInPlaylists(userString):
 def topSongsPlaylists(userString):
     user = getUser(userString)
     playlists = getUserPlaylists(user)
-    threads = []
-    for playlist in playlists:
-        if "Top Songs of " not in playlist['name']:
-            continue
+    with ThreadPoolExecutor() as executor:
+        for playlist in playlists:
+            if "Top Songs of " not in playlist['name']:
+                continue
 
-        x = threading.Thread(target=getSongsPlaylist, args=(playlist,))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+            executor.submit(getSongsPlaylist, playlist)
 
 
 def topArtists(userString, term='long_term'):
@@ -394,18 +361,12 @@ def playlistRepeatsAll(userString):
     user = getUser(userString)
     playlists = getUserPlaylists(user)
     results = []
-    threads = []
-    for playlist in playlists:
-        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
-            continue
+    with ThreadPoolExecutor() as executor:
+        for playlist in playlists:
+            if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
+                continue
 
-        x = threading.Thread(target=playlistRepeatsthread,
-                             args=(playlist, results))
-        threads.append(x)
-        x.start()
-
-    for i in threads:
-        i.join()
+            executor.submit(playlistRepeatsthread, playlist, results)
 
     return results
 
@@ -435,18 +396,12 @@ def ratio(userString='firiusbob', playlistString='Random Pool of Stuff'):
         del countplaylist[None]
 
     trackss = []
-    threads = []
-    for playlist in playlists:
-        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore:
-            continue
+    with ThreadPoolExecutor() as executor:
+        for playlist in playlists:
+            if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore:
+                continue
 
-        x = threading.Thread(target=appendTracksFromItem,
-                             args=(playlist, trackss,))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+            executor.submit(appendTracksFromItem, playlist, trackss)
 
     artists = [artist['name']
                for tracks in trackss for track in tracks for artist in track['track']['artists']]
@@ -481,18 +436,12 @@ def ratioGrouped(userString='firiusbob', playlistString='Random Pool of Stuff'):
         del countplaylist[None]
 
     trackss = []
-    threads = []
-    for playlist in playlists:
-        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore:
-            continue
+    with ThreadPoolExecutor() as executor:
+        for playlist in playlists:
+            if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore:
+                continue
 
-        x = threading.Thread(target=appendTracksFromItem,
-                             args=(playlist, trackss,))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+            executor.submit(appendTracksFromItem, playlist, trackss)
 
     artists = [tuple(artist['name'] for artist in track['track']['artists'])
                for tracks in trackss for track in tracks]
@@ -531,18 +480,12 @@ def findSongInPlaylists(userString, songId):
     songId = songId.replace('spotify:track:', '')
     playlists = getUserPlaylists(user)
     results = []
-    threads = []
-    for playlist in playlists:
-        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
-            continue
+    with ThreadPoolExecutor() as executor:
+        for playlist in playlists:
+            if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
+                continue
 
-        x = threading.Thread(target=findSongInPlayliststhread,
-                             args=(playlist, results, songId))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+            executor.submit(findSongInPlayliststhread, playlist, results, songId)
 
     return results
 
@@ -564,18 +507,12 @@ def dateAddedSongInPlaylists(userString, songId):
     songId = songId.replace('spotify:track:', '')
     playlists = getUserPlaylists(user)
     results = []
-    threads = []
-    for playlist in playlists:
-        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
-            continue
+    with ThreadPoolExecutor() as executor:
+        for playlist in playlists:
+            if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
+                continue
 
-        x = threading.Thread(
-            target=dateAddedSongInPlayliststhread, args=(playlist, results, songId))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+            executor.submit(dateAddedSongInPlayliststhread, playlist, results, songId)
 
     return sorted(results, key=operator.itemgetter(1))
 
@@ -601,18 +538,12 @@ def findArtistInPlaylists(userString, artistId):
     artistId = artistId.replace('spotify:artist:', '')
     playlists = getUserPlaylists(user)
     results = []
-    threads = []
-    for playlist in playlists:
-        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
-            continue
+    with ThreadPoolExecutor() as executor:
+        for playlist in playlists:
+            if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
+                continue
 
-        x = threading.Thread(target=findArtistInPlayliststhread,
-                             args=(playlist, results, artistId))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+            executor.submit(findArtistInPlayliststhread, playlist, results, artistId)
 
     return results
 
@@ -675,18 +606,12 @@ def searchPlaylists(userString, song):
 
     playlists = getUserPlaylists(user)
     songids = []
-    threads = []
-    for playlist in playlists:
-        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
-            continue
+    with ThreadPoolExecutor() as executor:
+        for playlist in playlists:
+            if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id']:
+                continue
 
-        x = threading.Thread(target=searchPlayliststhread,
-                             args=(playlist, songids, song))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+            executor.submit(searchPlayliststhread, playlist, songids, song)
 
     songids = list(filter(None.__ne__, songids))
     songids = list(set(songids))
@@ -755,18 +680,12 @@ def playlistFollowers(userString):
     user = getUser(userString)
     playlists = getUserPlaylists(user)
     followers = []
-    threads = []
-    for playlist in playlists:
-        name = playlist['name']
-        ownerid = playlist['owner']['id']
-        if name not in ignore and "Top Songs of " not in name and ownerid == user['id']:
-            x = threading.Thread(
-                target=playlistFollowersThread, args=(playlist, followers,))
-            threads.append(x)
-            x.start()
-
-    for thread in threads:
-        thread.join()
+    with ThreadPoolExecutor() as executor:
+        for playlist in playlists:
+            name = playlist['name']
+            ownerid = playlist['owner']['id']
+            if name not in ignore and "Top Songs of " not in name and ownerid == user['id']:
+                executor.submit(playlistFollowersThread, playlist, followers)
 
     sortedCount = sorted(followers, key=operator.itemgetter(1), reverse=True)
     return sortedCount
@@ -783,25 +702,22 @@ def commonSongsUsers(*userids):
     commonsongs = userFile['commonsongs']
     print('Pulling songs...')
     tracksss = []
+    executor = ThreadPoolExecutor()
     for userid in userids:
         user = getUser(userid)
         playlists = getUserPlaylists(user)
-        threads = []
         trackss = []
+        futures = []
         for playlist in playlists:
             if playlist['owner']['id'] != userid or "Top Songs of " in playlist['name']:
                 continue
 
-            x = threading.Thread(target=appendTracksFromItem,
-                                 args=(playlist, trackss,))
-            threads.append(x)
-            x.start()
+            futures.append(executor.submit(appendTracksFromItem, playlist, trackss))
 
-        for thread in threads:
-            thread.join()
-
+        wait(futures)
         tracksss.append(trackss)
 
+    executor.shutdown()
     print('Finding common songs...')
     trackuri = []
     for trackss in tracksss:
@@ -979,19 +895,13 @@ def newPlaylistsPullThread(playlist, filename):
 def newPlaylistsPull():
     user = getUser('firiusbob')
     playlists = getUserPlaylists(user)
-    threads = []
-    for playlist in playlists:
-        match = re.search(r'\d{4}-\d{1,2}-\d{1,2}', playlist['name'])
-        if match is None:
-            continue
-
-        x = threading.Thread(target=newPlaylistsPullThread,
-                             args=(playlist, match.group(),))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+    with ThreadPoolExecutor() as executor:
+        for playlist in playlists:
+            match = re.search(r'\d{4}-\d{1,2}-\d{1,2}', playlist['name'])
+            if match is None:
+                continue
+            
+            executor.submit(newPlaylistsPullThread, playlist, match.group())
 
 
 def artistCheckThread(artist, playlist, rpostracks, results):
@@ -1011,17 +921,11 @@ def artistCheck():
     playlists = getUserPlaylists(user)
     rpos = getPlaylist(playlists, 'Random Pool of Stuff')
     rpostracks = getTracksFromItem(rpos)
-    threads = []
     results = []
-    for artist in artists:
-        playlist = getPlaylist(playlists, artist)
-        x = threading.Thread(target=artistCheckThread, args=(
-            artist, playlist, rpostracks, results,))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+    with ThreadPoolExecutor() as executor:
+        for artist in artists:
+            playlist = getPlaylist(playlists, artist)
+            executor.submit(artistCheckThread, artist, playlist, rpostracks, results)
 
 
 def checkAll():
@@ -1037,18 +941,12 @@ def userUpToDate(userString):
 
     playlists = getUserPlaylists(user)
     trackss = []
-    threads = []
-    for playlist in playlists:
-        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore or "Common Songs " in playlist['name']:
-            continue
-
-        x = threading.Thread(target=appendTracksFromItem,
-                             args=(playlist, trackss,))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+    with ThreadPoolExecutor() as executor:
+        for playlist in playlists:
+            if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore or "Common Songs " in playlist['name']:
+                continue
+            
+            executor.submit(appendTracksFromItem, playlist, trackss)
 
     tracks = [track for i in trackss for track in i]
     albums = {}
@@ -1106,18 +1004,12 @@ def latestAddedSongs(userString):
 
     playlists = getUserPlaylists(user)
     trackss = []
-    threads = []
-    for playlist in playlists:
-        if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore or "Common Songs " in playlist['name']:
-            continue
-
-        x = threading.Thread(target=appendTracksFromItem,
-                             args=(playlist, trackss,))
-        threads.append(x)
-        x.start()
-
-    for thread in threads:
-        thread.join()
+    with ThreadPoolExecutor() as executor:
+        for playlist in playlists:
+            if "Top Songs of " in playlist['name'] or user['id'] != playlist['owner']['id'] or playlist['name'] in ignore or "Common Songs " in playlist['name']:
+                continue
+            
+            executor.submit(appendTracksFromItem, playlist, trackss)
 
     tracks = [track for i in trackss for track in i]
     dateAdded = []
