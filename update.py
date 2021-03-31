@@ -4,7 +4,6 @@ import datetime
 from concurrent.futures import ThreadPoolExecutor
 import sys
 import os
-from dotenv import load_dotenv
 
 bottomexecutor = ThreadPoolExecutor()
 
@@ -72,7 +71,6 @@ def last100RandomPool() -> None:
 
 
 date = datetime.datetime.today()
-load_dotenv()
 refreshtokenme = os.getenv('REFRESHTOKENME')
 try:
     sp = spotifywebapi.Spotify(
