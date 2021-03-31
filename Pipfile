@@ -13,3 +13,6 @@ python-levenshtein = "*"
 emoji = "*"
 spotifywebapi = "*"
 requests = "*"
+
+[requires]
+python_version = "3.9"
