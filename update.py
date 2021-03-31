@@ -1,11 +1,9 @@
 import spotifywebapi
 import json
 import datetime
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait, Future
 import sys
 import os
-
-bottomexecutor = ThreadPoolExecutor()
 
 def getAuthUser(user: dict[str, str]) -> spotifywebapi.User:
     return sp.getAuthUser(user['refresh_token'])
@@ -13,7 +11,7 @@ def getAuthUser(user: dict[str, str]) -> spotifywebapi.User:
 # updates the three continuously updated playlists for the given user object
 
 
-def updateIndividual(user: dict[str, str]) -> None:
+def updateIndividual(user: dict[str, str], bottomexecutor: ThreadPoolExecutor) -> None:
     playlistidlong = user['playlistidlong']
     playlistidmid = user['playlistidmid']
     playlistidshort = user['playlistidshort']
@@ -52,9 +50,10 @@ def updatePlaylist(user: spotifywebapi.User, playlistuser: spotifywebapi.User, t
 def update() -> None:
     print('update initiated at ' + date.strftime("%Y-%m-%d %H:%M:%S"))
     print('\n\n\n')
-    with ThreadPoolExecutor() as executor:
-        for user in userFile['users']:
-            executor.submit(updateIndividual, user)
+    with ThreadPoolExecutor() as bottomexecutor:
+        with ThreadPoolExecutor() as executor:
+            for user in userFile['users']:
+                executor.submit(updateIndividual, user, bottomexecutor)
 
 
 def last100RandomPool() -> None:
