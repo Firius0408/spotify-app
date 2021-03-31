@@ -1,4 +1,4 @@
-from spotifywebapi import StatusCodeError
+from spotifywebapi import StatusCodeError, User
 from fuzzywuzzy import process
 import random
 import string
@@ -15,7 +15,7 @@ redirect_uri = 'http://localhost:8081/callback'
 #generates a random string. Used for state in auth
 
 
-def generateRandomString(length):
+def generateRandomString(length: int) -> str:
    possible = string.ascii_letters + string.digits
    return ''.join(random.choice(possible) for i in range(length))
 
@@ -25,10 +25,10 @@ userids = []
 for i in userFile['users']:
     userids.append(i['id'])
 
-def getUserFromString(userString):
+def getUserFromString(userString: str) -> dict[str]:
     userid = process.extractOne(userString, userids, score_cutoff=80)
     if userid is None:
-        return
+        raise LookupError('Could not find user')
 
     for i in userFile['users']:
         if (i['id'] == userid[0]):
@@ -37,7 +37,7 @@ def getUserFromString(userString):
 # creates snapshot playlist of user with given userid, accessToken, time and term (time and term should match)
 
 
-def playlistIndividual(userobj, time, term):
+def playlistIndividual(userobj: User, time: str, term: str) -> None:
     playlistobj = userobj.createPlaylist(
         "Top Songs of " + time + " as of " + date.strftime("%m/%d/%Y"))
     playlistid = playlistobj['id']
@@ -47,7 +47,7 @@ def playlistIndividual(userobj, time, term):
 # re auth old user
 
 
-def authUser():
+def authUser() -> None:
     client_id = sp.client_id
     client_secret = sp.client_secret
     state = generateRandomString(16)
@@ -120,7 +120,7 @@ def authUser():
 # creates the three snapshot playlists for the user string
 
 
-def playlist(userString):
+def playlist(userString: str) -> None:
     user = getUserFromString(userString)
     userobj = getAuthUser(user)
     username = userobj.getUser()['display_name']

@@ -8,13 +8,13 @@ from dotenv import load_dotenv
 
 bottomexecutor = ThreadPoolExecutor()
 
-def getAuthUser(user):
+def getAuthUser(user: dict[str, str]) -> spotifywebapi.User:
     return sp.getAuthUser(user['refresh_token'])
 
 # updates the three continuously updated playlists for the given user object
 
 
-def updateIndividual(user):
+def updateIndividual(user: dict[str, str]) -> None:
     playlistidlong = user['playlistidlong']
     playlistidmid = user['playlistidmid']
     playlistidshort = user['playlistidshort']
@@ -37,7 +37,7 @@ def updateIndividual(user):
 # accessTokenPlaylist for access token of owner of given playlist in playlistid
 
 
-def updatePlaylist(user, playlistuser, term, playlistid, name):
+def updatePlaylist(user: spotifywebapi.User, playlistuser: spotifywebapi.User, term: str, playlistid: str, name: str) -> None:
     topsongs = user.getTopSongs(term, limit=50)
     uris = [i['uri'] for i in topsongs['items']]
     try:
@@ -50,7 +50,7 @@ def updatePlaylist(user, playlistuser, term, playlistid, name):
 # updates all continuously updated playlists for all users in users.json
 
 
-def update():
+def update() -> None:
     print('update initiated at ' + date.strftime("%Y-%m-%d %H:%M:%S"))
     print('\n\n\n')
     with ThreadPoolExecutor() as executor:
@@ -58,7 +58,7 @@ def update():
             executor.submit(updateIndividual, user)
 
 
-def last100RandomPool():
+def last100RandomPool() -> None:
     print('updating last 100 RPOS')
     userme = getAuthUser(userFile['users'][0])
     rpos = sp.getPlaylistFromId('5WYRn0FxSUhVsOQpQQ0xBV')
