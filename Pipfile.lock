@@ -72,11 +72,11 @@
         },
         "spotifywebapi": {
             "hashes": [
-                "sha256:2421b3a12f4b8bf0d54cdb1c95d104d4ba30dda19e2254338b80017d760e8d44",
-                "sha256:67cbb553edf23bbb1c01ef0107e65fc5ae6863727bc59f82119421e40fc4d530"
+                "sha256:05950e8784f018e9076ec72439b80f6f9d93716cd959f1afb082b13097d831e6",
+                "sha256:2556197920dd8a88d948bf9422a25755077db2ef2aeaf3de150d376ba8449b3a"
             ],
             "index": "pypi",
-            "version": "==1.2.0"
+            "version": "==1.2.2"
         },
         "urllib3": {
             "hashes": [
