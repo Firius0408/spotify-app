@@ -755,8 +755,8 @@ def commonSongsUsers(*userids: str) -> str:
 def commonSongsUsersAll() -> None:
     commonsongs = userFile['commonsongs']
     for commonsong in commonsongs:
-        print(', '.join(commonsong[0]))
         while True:
+            print(', '.join(commonsong[0]))
             try:
                 commonSongsUsers(*commonsong[0])
             except Exception as err:
