@@ -7,6 +7,7 @@ import threading
 import sys
 import requests
 from urllib.parse import urlparse, parse_qs
+from concurrent.futures import ThreadPoolExecutor
 from update import getAuthUser, updatePlaylist, userFile, sp, date, updateIndividual, botuser
 
 # not used, needed to satisfy spotify auth
@@ -100,7 +101,9 @@ def authUser() -> None:
                 'playlistidlong': playlistlong['id'],
                 'playlistidmid': playlistmid['id'],
                 'playlistidshort': playlistshort['id']}
-        updateIndividual(user)
+        bottomexecutor = ThreadPoolExecutor()
+        updateIndividual(user, bottomexecutor)
+        bottomexecutor.shutdown()
         users.append(user)
     else:
         print('user found')

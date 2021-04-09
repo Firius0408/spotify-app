@@ -1,7 +1,7 @@
 import spotifywebapi
 import json
 import datetime
-from concurrent.futures import ThreadPoolExecutor, wait, Future
+from concurrent.futures import ThreadPoolExecutor
 import sys
 import os
 
@@ -40,7 +40,7 @@ def updatePlaylist(user: spotifywebapi.User, playlistuser: spotifywebapi.User, t
     try:
         playlistuser.replacePlaylistItems(playlistid, uris)
     except spotifywebapi.StatusCodeError as err:
-        print(err.message + ' for ' + user.getUser()['display_name'])
+        print(err + ' for ' + user.getUser()['display_name'])
     else:
         print('finished ' + term.removesuffix('_term') + ' playlist for user ' + name)
 
