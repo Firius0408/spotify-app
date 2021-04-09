@@ -688,6 +688,19 @@ def playlistFollowers(userString: str) -> list[tuple[str, int]]:
     sortedCount = sorted(followers, key=operator.itemgetter(1), reverse=True)
     return sortedCount
 
+def commonSongsUsersThread(userid: str, tracksss: list, executor: ThreadPoolExecutor):
+    user = getUser(userid)
+    playlists = getUserPlaylists(user)
+    trackss = []
+    futures = []
+    for playlist in playlists:
+        if playlist['owner']['id'] != userid or "Top Songs of " in playlist['name']:
+            continue
+
+        futures.append(executor.submit(appendTracksFromItem, playlist, trackss))
+
+    wait(futures)
+    tracksss.append(trackss)
 
 def commonSongsUsers(*userids: str) -> str:
     userids = [i.replace('spotify:user:', '') for i in userids]
@@ -701,20 +714,11 @@ def commonSongsUsers(*userids: str) -> str:
     print('Pulling songs...')
     tracksss = []
     executor = ThreadPoolExecutor()
+    futures = []
     for userid in userids:
-        user = getUser(userid)
-        playlists = getUserPlaylists(user)
-        trackss = []
-        futures = []
-        for playlist in playlists:
-            if playlist['owner']['id'] != userid or "Top Songs of " in playlist['name']:
-                continue
+        futures.append(executor.submit(commonSongsUsersThread, userid, tracksss, executor))
 
-            futures.append(executor.submit(appendTracksFromItem, playlist, trackss))
-
-        wait(futures)
-        tracksss.append(trackss)
-
+    wait(futures)
     executor.shutdown()
     print('Finding common songs...')
     trackuri = []
@@ -726,15 +730,25 @@ def commonSongsUsers(*userids: str) -> str:
     for i in trackuri[1:]:
         commonuri.intersection_update(i)
 
-    commonuri = [i for i in commonuri if i is not None]
+    if None in commonuri:
+        commonuri.remove(None)
+
     for playlist in commonsongs:
         if set(userids) == set(playlist[0]):
             playlistid = playlist[1]
-            print('Blanking playlist...')
-            botuser.replacePlaylistItems(playlistid, [])
-            botuser.addSongsToPlaylist(playlistid, commonuri)
+            tempplaylist = sp.getPlaylistFromId(playlistid)
+            playlisttracks = getTracksFromItem(tempplaylist)
+            playlisttracksset = {i['track']['uri'] for i in playlisttracks}
+            newtracksset = commonuri - playlisttracksset
+            if newtracksset:
+                print('Adding to playlist...')
+                botuser.addSongsToPlaylist(playlistid, list(newtracksset))
+            else:
+                print('Playlist already up to date')
+
             return playlistid
 
+    commonuri = [i for i in commonuri if i is not None]
     names = [getUser(i)['display_name'] for i in userids]
     name = 'Common Songs between ' + ' and '.join(names)
     print('Creating playlist...')
