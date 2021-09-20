@@ -178,7 +178,7 @@ def topArtistsInPlaylists(userString: str, count: bool = False, grouped: bool = 
                     for tracks in trackss for track in tracks]
         else:
             temp = [artist['name']
-                    for track in tracks for artist in track['track']['artists']]
+                    for track in tracks if track and track['track'] for artist in track['track']['artists'] if artist and artist['name']]
 
         if not count:
             temp = list(set(temp))
