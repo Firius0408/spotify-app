@@ -943,7 +943,9 @@ def artistCheck() -> None:
 def checkAll() -> None:
     print(artistCheck())
     print(checkWd())
-    print(playlistRepeatsAll('firiusbob'))
+    output = playlistRepeatsAll('firiusbob')
+    output = [i for i in output if i[0] != 'Track']
+    print(output)
 
 
 def userUpToDate(userString: str) -> datetime.timedelta:
