@@ -929,7 +929,7 @@ def artistCheckThread(artist: str, playlists: list[dict], rpostracks: list[dict]
 
 
 def artistCheck() -> None:
-    artists = ['AJR', 'Andrea Bocelli', 'The Beatles', 'Bleachers', 'Drake', 'Ed Sheeran', 'Eminem', 'Illenium', 'Hardwell', 'Kygo', 'Lauv',
+    artists = ['AJR', 'Andrea Bocelli', 'The Beatles', 'Bleachers', 'Drake', 'Ed Sheeran', 'Eminem', 'Gryffin', 'Hardwell', 'Illenium', 'Kygo', 'Lauv',
                'Logic', 'Maroon 5', 'Martin Garrix', 'OneRepublic', 'Pegboard Nerds', 'Post Malone', 'Queen', 'Taylor Swift', 'Zedd']
     user = getUser('firiusbob')
     playlists = getUserPlaylists(user)
