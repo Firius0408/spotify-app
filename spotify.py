@@ -17,8 +17,8 @@ redirect_uri = 'http://localhost:8081/callback'
 
 
 def generateRandomString(length: int) -> str:
-   possible = string.ascii_letters + string.digits
-   return ''.join(random.choice(possible) for i in range(length))
+    possible = string.ascii_letters + string.digits
+    return ''.join(random.choice(possible) for i in range(length))
 
 #searches users.json and returns user object from string arg
 
@@ -31,9 +31,9 @@ def getUserFromString(userString: str) -> dict[str]:
     if userid is None:
         raise LookupError('Could not find user')
 
-    for i in userFile['users']:
-        if (i['id'] == userid[0]):
-            return i
+    for j in userFile['users']:
+        if (j['id'] == userid[0]):
+            return j
 
 # creates snapshot playlist of user with given userid, accessToken, time and term (time and term should match)
 
@@ -107,9 +107,9 @@ def authUser() -> None:
         users.append(user)
     else:
         print('user found')
-        for i in users:
-            if i['id'] == userid:
-                i['refresh_token'] = refreshToken
+        for j in users:
+            if j['id'] == userid:
+                j['refresh_token'] = refreshToken
                 break
 
     userFile['users'] = users
