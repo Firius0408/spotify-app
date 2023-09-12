@@ -11,7 +11,7 @@ from update import getAuthUser, userFile, sp
 from spotify import getUserFromString
 
 ignore = ['Post Malone', 'AJR', 'Ed Sheeran', 'Eminem', 'Logic', 'Queen', 'Bleachers', 'L?', 'IYLHLHG', 'Musical', 'Disney', 'Indie', 'Classical', 'Monstercat', 'Rap', 'House', 'The Beatles', 'Ashley', 'Jonathan', 'Daniel', 'Phillip', 'Shan', 'Pegboard Nerds', 'Drake', 'Hardwell',
-          'Martin Garrix', 'Maroon 5', 'Taylor Swift', 'Andrea Bocelli', 'Kygo', 'Zedd', 'OneRepublic', 'Album Worthy', 't', 'Memories', 'Last 100 songs in RPoS', 'Top Danceability Songs for firiusbob', 'Top Valence Songs for firiusbob', 'Top Energy Songs for firiusbob', 'Lauv', 'Illenium']
+          'Martin Garrix', 'Maroon 5', 'Taylor Swift', 'Andrea Bocelli', 'Kygo', 'Zedd', 'OneRepublic', 'Album Worthy', 't', 'Memories', 'Last 100 songs in RPoS', 'Top Danceability Songs for firiusbob', 'Top Valence Songs for firiusbob', 'Top Energy Songs for firiusbob', 'Lauv', 'Illenium', 'Mitis']
 
 users = {}
 userplaylists = {}
@@ -930,7 +930,7 @@ def artistCheckThread(artist: str, playlists: list[dict], rpostracks: list[dict]
 
 def artistCheck() -> None:
     artists = ['AJR', 'Andrea Bocelli', 'The Beatles', 'Bleachers', 'Drake', 'Ed Sheeran', 'Eminem', 'Gryffin', 'Hardwell', 'Illenium', 'Kygo', 'Lauv',
-               'Logic', 'Maroon 5', 'Martin Garrix', 'OneRepublic', 'Pegboard Nerds', 'Post Malone', 'Queen', 'Taylor Swift', 'Zedd']
+               'Logic', 'Maroon 5', 'Martin Garrix', 'Mitis', 'OneRepublic', 'Pegboard Nerds', 'Post Malone', 'Queen', 'Taylor Swift', 'Zedd']
     user = getUser('firiusbob')
     playlists = getUserPlaylists(user)
     rpos = getPlaylist(playlists, 'Random Pool of Stuff')
